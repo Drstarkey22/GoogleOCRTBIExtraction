@@ -207,10 +207,20 @@ def render_report(fields: Dict, patient_name: str, dob: str, doi: str, dos: str,
     fixations_score = int(raw_fx) if raw_fx.isdigit() else None
     raw_ds = (fields.get("dysfunctional_scale") or fields.get("Dysfunctional scale") or fields.get("eyeq_score") or "").strip()
     dysfunctional_scale = int(raw_ds) if raw_ds.isdigit() else None
-    standard_score = int(str(fields.get("standard_score_percentile", "0").replace("nd", "").replace("rd", "").replace("th", "").replace("st", "")).strip() or 0)
-    proprio_score = int(str(fields.get("proprioception_score_percentile", "0").replace("nd", "").replace("rd", "").replace("th", "").replace("st", "")).strip() or 0)
-    visual_score = int(str(fields.get("visual_score_percentile", "0").replace("nd", "").replace("rd", "").replace("th", "").replace("st", "")).strip() or 0)
-    vestibular_score = int(str(fields.get("vestibular_score_percentile", "0").replace("nd", "").replace("rd", "").replace("th", "").replace("st", "")).strip() or 0)
+    def _parse_percentile(val) -> int:
+        """Parse a percentile value, stripping %, ordinal suffixes, and extracting just the number."""
+        import re
+        if val is None:
+            return 0
+        s = str(val).replace("%", "").replace("nd", "").replace("rd", "").replace("th", "").replace("st", "").strip()
+        # Extract first number from string
+        match = re.search(r'\d+', s)
+        return int(match.group()) if match else 0
+
+    standard_score = _parse_percentile(fields.get("standard_score_percentile"))
+    proprio_score = _parse_percentile(fields.get("proprioception_score_percentile"))
+    visual_score = _parse_percentile(fields.get("visual_score_percentile"))
+    vestibular_score = _parse_percentile(fields.get("vestibular_score_percentile"))
     # Neuropsychiatric scores
     rpq_score = int(fields.get("rpq_score", 0) or 0)
     pcl_5_score = int(fields.get("pcl_5_score", 0) or 0)
@@ -377,19 +387,48 @@ def upload_endpoint() -> tuple:
             "dysfunctionalscale": "Dysfunctional scale",
             "eyeqscore": "Dysfunctional scale",
 
-            # CTSIB / BTrackS
-            "standard": "Standard score",
-            "standardscore": "Standard score",
-            "proprioception": "Proprioception score",
-            "proprioceptionscore": "Proprioception score",
-            "visual": "Visual score",
-            "visualscore": "Visual score",
-            "vestibular": "Vestibular score",
-            "vestibularscore": "Vestibular score",
-            "standardscorepercentile": "Standard score",
-            "proprioceptionscorepercentile": "Proprioception score",
-            "visualscorepercentile": "Visual score",
-            "vestibularscorepercentile": "Vestibular score",
+            # CTSIB / BTrackS - Path Length (cm) values
+            "standard": "standard_path_length",
+            "standardscore": "standard_path_length",
+            "standardpathlength": "standard_path_length",
+            "proprioception": "proprioception_path_length",
+            "proprioceptionscore": "proprioception_path_length",
+            "proprioceptionpathlength": "proprioception_path_length",
+            "visual": "visual_path_length",
+            "visualscore": "visual_path_length",
+            "visualpathlength": "visual_path_length",
+            "vestibular": "vestibular_path_length",
+            "vestibularscore": "vestibular_path_length",
+            "vestibularpathlength": "vestibular_path_length",
+            # CTSIB / BTrackS - Percentile values (these are what we want for the report)
+            "standardpercentile": "standard_score_percentile",
+            "standardscorepercentile": "standard_score_percentile",
+            "proprioceptionpercentile": "proprioception_score_percentile",
+            "proprioceptionscorepercentile": "proprioception_score_percentile",
+            "visualpercentile": "visual_score_percentile",
+            "visualscorepercentile": "visual_score_percentile",
+            "vestibularpercentile": "vestibular_score_percentile",
+            "vestibularscorepercentile": "vestibular_score_percentile",
+            # Alternative percentile field names (abbreviated)
+            "stdpercentile": "standard_score_percentile",
+            "propercentile": "proprioception_score_percentile",
+            "vispercentile": "visual_score_percentile",
+            "vespercentile": "vestibular_score_percentile",
+            # From baseline results table (STD %, PRO %, VIS %, VES %)
+            "std": "standard_path_length",
+            "pro": "proprioception_path_length",
+            "vis": "visual_path_length",
+            "ves": "vestibular_path_length",
+            # Percentile variations with % column references
+            "percentile1": "standard_score_percentile",
+            "percentile2": "proprioception_score_percentile",
+            "percentile3": "visual_score_percentile",
+            "percentile4": "vestibular_score_percentile",
+            # Baseline percentile fields
+            "baselinestandardpercentile": "standard_score_percentile",
+            "baselineproprioceptionpercentile": "proprioception_score_percentile",
+            "baselinevisualpercentile": "visual_score_percentile",
+            "baselinevestibularpercentile": "vestibular_score_percentile",
 
             # Creyos screens
             "rpq": "rpq score",
@@ -444,7 +483,7 @@ def upload_endpoint() -> tuple:
 
     # Auto-detect which tests are present
     vng = any(k in merged_fields for k in ("pursuits score", "Saccades Score", "Fixations score"))
-    ct_sib = any(k in merged_fields for k in ("Standard score", "Proprioception score", "Visual score", "Vestibular score"))
+    ct_sib = any(k in merged_fields for k in ("standard_score_percentile", "proprioception_score_percentile", "visual_score_percentile", "vestibular_score_percentile", "standard_path_length", "proprioception_path_length", "visual_path_length", "vestibular_path_length"))
     creyos = any(k in merged_fields for k in ("rpq score", "pcl-5 score", "psqi score", "phq-9 score", "gad-7 score")) or any(k in merged_fields for k in ("attention_percentile","deductive_reasoning_percentile","episodic_memory_percentile","mental_rotation_percentile","planning_percentile","polygons_percentile","response_inhibition_percentile","spatial_short_term_memory_percentile","verbal_reasoning_percentile","verbal_short_term_memory_percentile","visuospatial_working_memory_percentile","working_memory_percentile"))
 
     # Render ONE final report

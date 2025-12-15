@@ -35,3 +35,14 @@ The backend requires these environment variables when deployed to Cloud Run:
 - Structured field extraction for medical tests (RightEye, CTSIB/BTrackS, Creyos)
 - Automatic interpretation report generation
 - PDF report download
+
+## CTSIB/BTrackS Field Mapping (Important)
+The BTrackS/mCTSIB documents contain TWO types of values:
+1. **Path Length (cm)** - The raw sway measurement in centimeters (e.g., 35, 33, 53, 153)
+2. **Percentile** - The percentile ranking compared to normative data (e.g., 1%, 12%, 5%, 2%)
+
+The report should display PERCENTILE values, not path lengths. The backend code maps:
+- Path length fields → `standard_path_length`, `proprioception_path_length`, etc.
+- Percentile fields → `standard_score_percentile`, `proprioception_score_percentile`, etc.
+
+If the Document AI Custom Extractor returns incorrect field names, update the alias mapping in `main.py` within the `_merge_fields` function.
