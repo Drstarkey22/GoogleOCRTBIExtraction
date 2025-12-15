@@ -1,0 +1,570 @@
+"""
+Flask application for processing uploaded documents with Google Document AI and storing results in Firestore.
+
+The `/upload` endpoint accepts multiple files via multipart/form-data.  Each file is uploaded to Cloud Storage, processed with the configured Document AI OCR processor, and stored in Firestore along with the extracted text.
+
+Environment variables required:
+
+* `PROJECT_ID` – ID of the Google Cloud project.
+* `PROCESSOR_ID` – ID of the Document AI processor (OCR).
+* `PROCESSOR_LOCATION` – Region of the processor, e.g. `us`.
+* `BUCKET_NAME` – Name of the Cloud Storage bucket to store uploads.
+
+You can deploy this application to Cloud Run by building the container image and setting these variables during deployment.
+"""
+
+import os
+import re
+from datetime import datetime
+from typing import List, Dict
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+from google.cloud import storage  # type: ignore
+from google.cloud import firestore  # type: ignore
+from google.cloud import documentai_v1 as documentai  # type: ignore
+from google.cloud import documentai_v1beta3 as documentai_beta  # type: ignore
+from jinja2 import Template  # type: ignore
+from google.protobuf.json_format import MessageToDict  # type: ignore
+import json
+
+app = Flask(__name__)
+CORS(app)
+
+PROJECT_ID = os.getenv("PROJECT_ID")
+PROCESSOR_ID = os.getenv("PROCESSOR_ID")
+PROCESSOR_LOCATION = os.getenv("PROCESSOR_LOCATION", "us")
+BUCKET_NAME = os.getenv("BUCKET_NAME")
+GEN_EXTRACTOR_ID = os.getenv("GEN_EXTRACTOR_ID")
+GEN_EXTRACTOR_LOCATION = os.getenv("GEN_EXTRACTOR_LOCATION", "us")
+
+
+def get_storage_client() -> storage.Client:
+    """Instantiate and return a Cloud Storage client."""
+    return storage.Client(project=PROJECT_ID)
+
+
+def get_firestore_client() -> firestore.Client:
+    """Instantiate and return a Firestore client."""
+    return firestore.Client(project=PROJECT_ID)
+
+
+def process_document(content: bytes, mime_type: str = "application/pdf") -> documentai.Document:
+    """Send the given bytes to the Document AI OCR processor and return the processed document.
+
+    Args:
+        content: Raw bytes of the document to process.
+        mime_type: MIME type of the document (default: application/pdf).
+
+    Returns:
+        A `documentai.Document` object containing extracted text and layout information.
+    """
+    if not (PROJECT_ID and PROCESSOR_ID):
+        raise RuntimeError("PROJECT_ID and PROCESSOR_ID must be set in environment variables")
+    name = f"projects/{PROJECT_ID}/locations/{PROCESSOR_LOCATION}/processors/{PROCESSOR_ID}"
+    client = documentai.DocumentProcessorServiceClient()
+    raw_document = documentai.RawDocument(content=content, mime_type=mime_type)
+    request = documentai.ProcessRequest(name=name, raw_document=raw_document)
+    result = client.process_document(request=request)
+    return result.document
+
+
+def upload_to_bucket(file_obj, filename: str) -> str:
+    """Upload the file object to the configured bucket and return its public URI.
+
+    Args:
+        file_obj: A file-like object positioned at the beginning of the file.
+        filename: Name to use for the blob in Cloud Storage.
+
+    Returns:
+        The URI of the uploaded object (gs://bucket/file).
+    """
+    if not BUCKET_NAME:
+        raise RuntimeError("BUCKET_NAME must be set in environment variables")
+    client = get_storage_client()
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(filename)
+    # Upload file content
+    blob.upload_from_file(file_obj)
+    return f"gs://{BUCKET_NAME}/{filename}"
+
+def upload_json_to_bucket(data: Dict, filename: str) -> str:
+    """Upload a JSON-serializable dictionary as a JSON file to Cloud Storage.
+
+    Args:
+        data: Dictionary to serialize to JSON and upload.
+        filename: Name of the JSON file in Cloud Storage.
+
+    Returns:
+        gs:// URI of the uploaded JSON file.
+    """
+    if not BUCKET_NAME:
+        raise RuntimeError("BUCKET_NAME must be set in environment variables")
+    client = get_storage_client()
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(filename)
+    blob.upload_from_string(json.dumps(data), content_type="application/json")
+    return f"gs://{BUCKET_NAME}/{filename}"
+
+def extract_fields_generative(gcs_uri: str) -> Dict:
+    """Call the Document AI generative extractor to return structured fields.
+
+    This function returns a dictionary mapping field names to their text values.
+    If the generative extractor environment variables are not set, it returns an empty dict.
+
+    Args:
+        gcs_uri: The Cloud Storage URI of the document (PDF) to process.
+
+    Returns:
+        A dictionary of extracted field values keyed by field name.
+    """
+    if not GEN_EXTRACTOR_ID:
+        return {}
+    client = documentai_beta.DocumentProcessorServiceClient()
+    name = f"projects/{PROJECT_ID}/locations/{GEN_EXTRACTOR_LOCATION}/processors/{GEN_EXTRACTOR_ID}"
+    # Define the list of fields you expect to extract. These should match your schema names.
+    fields = [
+        "attention_percentile",
+        "deductive_reasoning_percentile",
+        "dysfunctional_scale",
+        "episodic_memory_percentile",
+        "fixations_score",
+        "gad_7_score",
+        "mental_rotation_percentile",
+        "pursuits_score",
+        "saccades_score",
+        "standard_score_percentile",
+        "proprioception_score_percentile",
+        "visual_score_percentile",
+        "vestibular_score_percentile",
+        "rpq_score",
+        "pcl_5_score",
+        "psqi_score",
+        "phq_9_score",
+        "visuospatial_working_memory_percentile",
+        "working_memory_test_percentile",
+        "spatial_short_term_memory_percentile",
+        "verbal_short_term_memory_percentile",
+        "polygons_percentile",
+        "mental_rotation_percentile",
+        "verbal_reasoning_percentile",
+        "planning_percentile",
+        "response_inhibition_percentile",
+    ]
+    request = documentai_beta.GenerativeExtractRequest(
+        name=name,
+        input_document=documentai_beta.GenerativeExtractRequest.InputDocument(
+            gcs_document=documentai_beta.GcsDocument(gcs_uri=gcs_uri, mime_type="application/pdf")
+        ),
+        fields=fields,
+    )
+    response = client.generative_extract(request=request)
+    result = {}
+    for field in response.fields:
+        result[field.field_name] = field.field_value.text
+    return result
+
+
+
+
+# ----------------------------
+# Fallback extractors (when generative fields come back empty)
+# ----------------------------
+
+def parse_righteye_from_text(text: str) -> Dict:
+    """
+    Robust RightEye extraction from OCR text.
+    Returns:
+      patient_name, dob, dos
+      pursuits score, Saccades Score, Fixations score
+    """
+    out: Dict = {}
+    if not text:
+        return out
+
+    # Patient info
+    m = re.search(r"\bName:\s*([A-Z][A-Z\s'-]+)\b", text)
+    if m:
+        out["patient_name"] = m.group(1).strip()
+
+    m = re.search(r"\bDate of Birth:\s*([0-9]{2}/[0-9]{4}|[0-9]{2}/[0-9]{2}/[0-9]{4})\b", text)
+    if m:
+        out["dob"] = m.group(1).strip()
+
+    m = re.search(r"\bAssessment Date:\s*([0-9]{2}/[0-9]{2}/[0-9]{4}\s+[0-9]{1,2}:[0-9]{2}\s*(AM|PM))\b", text)
+    if m:
+        out["dos"] = m.group(1).strip()
+
+    # Scores: common OCR layout "<num> Pursuits", "<num> Saccades"
+    m = re.search(r"\b(\d{1,3})\s+Pursuits\b", text)
+    if m:
+        out["pursuits score"] = m.group(1)
+
+    m = re.search(r"\b(\d{1,3})\s+Saccades\b", text)
+    if m:
+        out["Saccades Score"] = m.group(1)
+
+    # Fixations: choose a plausible 0–100 score near the Fixations section and ignore degree markers (1º/2º/4º).
+    fix = None
+
+    # Grab a window of text starting at "Fixations" to look for candidates.
+    fm = re.search(r"Fixations(?:.|\n){0,350}", text, re.I)
+    fix_window = fm.group(0) if fm else ""
+
+    # Candidate extraction: integers 0–100 that are NOT followed by a degree symbol.
+    candidates = []
+    for m in re.finditer(r"\b(\d{1,3})\b(?!\s*º)", fix_window):
+        val = int(m.group(1))
+        if 0 <= val <= 100:
+            candidates.append(val)
+
+    # Prefer higher values (RightEye accuracy scores are typically 0–100 and often 2 digits like 91)
+    if candidates:
+        fix = max(candidates)
+
+    # Debug: include a small snippet so we can see the exact OCR neighborhood if needed (safe size).
+    if fix_window:
+        out["fixations_debug"] = fix_window[:300].replace("\n", " ")
+
+    if fix is not None:
+        out["Fixations score"] = str(fix)
+
+    return out
+
+
+    return out
+
+
+
+def pick_first(fields: Dict, *keys: str):
+    """
+    Return the first non-empty value found among keys in fields.
+    """
+    for k in keys:
+        v = fields.get(k)
+        if v is None:
+            continue
+        # handle list values
+        if isinstance(v, list):
+            v = next((x for x in v if x not in (None, "")), None)
+        if v not in (None, ""):
+            return v
+    return None
+
+
+# ----------------------------
+# Report rendering helpers
+# ----------------------------
+
+def render_report(
+    fields: Dict,
+    patient_name: str = "",
+    dob: str = "",
+    doi: str = "",
+    dos: str = "",
+    vng: bool = False,
+    ct_sib: bool = False,
+    creyos: bool = False,
+) -> str:
+    """
+    Render interpretation report using a Jinja template packaged inside ./ocr_app.
+    """
+    template_path = os.getenv("REPORT_TEMPLATE_PATH", "report_template.html.jinja")
+    with open(template_path, "r", encoding="utf-8") as f:
+        template_str = f.read()
+
+    template = Template(template_str)
+    return template.render(
+        fields=fields or {},
+        patient_name=patient_name or "",
+        dob=dob or "",
+        doi=doi or "",
+        dos=dos or "",
+        vng=bool(vng),
+        ct_sib=bool(ct_sib),
+        creyos=bool(creyos),
+    )
+
+
+def html_to_pdf(html: str) -> bytes:
+    """
+    Convert HTML to PDF bytes using wkhtmltopdf via pdfkit.
+    """
+    pdf = pdfkit.from_string(html, False)
+    if isinstance(pdf, bytes):
+        return pdf
+    return pdf.encode("utf-8")
+
+
+
+def firestore_safe_dict(d: Dict) -> Dict:
+    """
+    Firestore field names cannot start with __ and cannot contain '.'.
+    This returns a cleaned copy safe for writing.
+    """
+    out = {}
+    for k, v in (d or {}).items():
+        if not isinstance(k, str):
+            continue
+        if k.startswith("__"):
+            continue
+        if "." in k:
+            continue
+        out[k] = v
+    return out
+
+
+
+# ----------------------------
+# Document AI Custom Extractor helpers
+# ----------------------------
+
+EXTRACTOR_PROCESSOR_ID = os.getenv("EXTRACTOR_PROCESSOR_ID")
+EXTRACTOR_LOCATION = os.getenv("EXTRACTOR_LOCATION", "us")
+
+def process_document_extractor_bytes(content: bytes, mime_type: str = "application/pdf") -> documentai.Document:
+    """
+    Call the Document AI Custom Extractor processor using raw bytes.
+    """
+    if not (PROJECT_ID and EXTRACTOR_PROCESSOR_ID):
+        raise RuntimeError("PROJECT_ID and EXTRACTOR_PROCESSOR_ID must be set")
+    name = f"projects/{PROJECT_ID}/locations/{EXTRACTOR_LOCATION}/processors/{EXTRACTOR_PROCESSOR_ID}"
+    client = documentai.DocumentProcessorServiceClient()
+    raw = documentai.RawDocument(content=content, mime_type=mime_type)
+    req = documentai.ProcessRequest(name=name, raw_document=raw)
+    result = client.process_document(request=req)
+    return result.document
+
+def entities_to_fields(doc: documentai.Document) -> Dict:
+    out: Dict = {}
+    ents = getattr(doc, "entities", None) or []
+    for e in ents:
+        key = (getattr(e, "type_", "") or "").strip()
+        if not key:
+            continue
+
+        val = ""
+        nv = getattr(e, "normalized_value", None)
+        if nv and getattr(nv, "text", ""):
+            val = (nv.text or "").strip()
+        if not val:
+            val = (getattr(e, "mention_text", "") or "").strip()
+
+        if not val:
+            continue
+
+        if key in out and out[key] != val:
+            if isinstance(out[key], list):
+                out[key].append(val)
+            else:
+                out[key] = [out[key], val]
+        else:
+            out[key] = val
+    return out
+
+
+@app.route("/upload", methods=["POST"])
+def upload_endpoint() -> tuple:
+    """
+    Upload 1–3 PDFs (RightEye, CTSIB/BTrackS, Creyos) and generate ONE comprehensive interpretation report.
+    Numbers/values are pulled from the documents via generative extraction. Sections are omitted if a test isn't present.
+    """
+    if "files" not in request.files:
+        return jsonify({"error": "No files part in the request"}), 400
+
+    files: List = request.files.getlist("files")
+    if not files:
+        return jsonify({"error": "No files uploaded"}), 400
+
+    db = get_firestore_client()
+
+    merged_fields: Dict = {}
+    file_results = []
+    first_blob_uri = ""
+
+    def _norm(k: str) -> str:
+        import re
+        return re.sub(r"[^a-z0-9]+", "", (k or "").lower())
+
+    def _merge_fields(target: Dict, incoming: Dict) -> None:
+        incoming = incoming or {}
+
+        for k, v in incoming.items():
+            if v is None or v == "":
+                continue
+            target.setdefault(k, v)
+
+        alias_map = {
+            "pursuits": "pursuits score",
+            "pursuitsscore": "pursuits score",
+            "saccades": "Saccades Score",
+            "saccadesscore": "Saccades Score",
+            "fixations": "Fixations score",
+            "fixationsscore": "Fixations score",
+            "eyeq": "Dysfunctional scale",
+            "dysfunctionalscale": "Dysfunctional scale",
+
+            "standard": "Standard score",
+            "standardscore": "Standard score",
+            "proprioception": "Proprioception score",
+            "proprioceptionscore": "Proprioception score",
+            "visual": "Visual score",
+            "visualscore": "Visual score",
+            "vestibular": "Vestibular score",
+            "vestibularscore": "Vestibular score",
+
+            "rpq": "rpq score",
+            "rpqscore": "rpq score",
+            "pcl5": "pcl-5 score",
+            "pcl5score": "pcl-5 score",
+            "psqi": "psqi score",
+            "psqiscore": "psqi score",
+            "phq9": "phq-9 score",
+            "phq9score": "phq-9 score",
+            "gad7": "gad-7 score",
+            "gad7score": "gad-7 score",
+
+            "patientname": "patient_name",
+            "dateofbirth": "dob",
+            "dateofinjury": "doi",
+            "dateoftesting": "dos",
+            "assessmentdate": "dos",
+        }
+
+        norm_in = {_norm(k): v for k, v in incoming.items() if v not in (None, "")}
+        for nk, out_key in alias_map.items():
+            if nk in norm_in:
+                target.setdefault(out_key, norm_in[nk])
+
+    for file_storage in files:
+        filename = file_storage.filename or "document"
+
+        file_storage.stream.seek(0)
+        blob_uri = upload_to_bucket(file_storage.stream, filename)
+        if not first_blob_uri:
+            first_blob_uri = blob_uri
+
+        try:
+            # Primary: Custom Extractor (structured fields)
+            gen_fields = {}
+            try:
+                _ext_error = ""
+                file_storage.stream.seek(0)
+                file_bytes = file_storage.stream.read()
+                ext_doc = process_document_extractor_bytes(file_bytes, mime_type="application/pdf")
+                gen_fields = entities_to_fields(ext_doc)
+                gen_fields["_ext_entity_count"] = len(getattr(ext_doc, "entities", []) or [])
+                gen_fields["_ext_entity_types"] = [e.type_ for e in (getattr(ext_doc, "entities", []) or [])][:50]
+                gen_fields["_ext_entity_count"] = len(getattr(ext_doc, "entities", []) or [])
+                gen_fields["_ext_entity_types"] = [e.type_ for e in (getattr(ext_doc, "entities", []) or [])][:50]
+
+            except Exception as e:
+                gen_fields = {"_ext_error": f"{type(e).__name__}: {e}"}
+
+            # Fallback: OCR + regex only if extractor returns nothing
+            if not gen_fields:
+                try:
+                    file_storage.stream.seek(0)
+                    file_bytes = file_storage.stream.read()
+                    doc = process_document(content=file_bytes, mime_type="application/pdf")
+                    ocr_text = doc.text or ""
+                    fallback = parse_righteye_from_text(ocr_text)
+                    if fallback:
+                        fallback["fallback_used"] = "ocr_regex"
+                        gen_fields = fallback
+                except Exception:
+                    pass
+            # Fallback: if generative extractor returns nothing, run OCR + regex extraction (RightEye)
+            fallback_error = ""
+            if not gen_fields:
+                try:
+                    # IMPORTANT: read from the underlying stream
+                    file_storage.stream.seek(0)
+                    file_bytes = file_storage.stream.read()
+
+                    # Detect mime type (keep simple for now)
+                    mime_type = "application/pdf"
+                    doc = process_document(content=file_bytes, mime_type=mime_type)
+
+                    ocr_text = doc.text or ""
+                    fallback = parse_righteye_from_text(ocr_text)
+
+                    if fallback:
+                        # Tag it so we can confirm fallback was used
+                        fallback["fallback_used"] = "righteye_ocr"
+                        gen_fields = fallback
+                    else:
+                        fallback_error = "fallback_parser_returned_empty"
+                except Exception as e:
+                    fallback_error = f"{type(e).__name__}: {e}"
+
+                # Surface fallback errors in the response for debugging
+                if fallback_error:
+                    file_results.append({"filename": filename, "warning": f"fallback_failed: {fallback_error}"})
+
+        except Exception as e:
+            file_results.append({"filename": filename, "error": f"extract_fields_generative failed: {e}"})
+            continue
+
+        _merge_fields(merged_fields, gen_fields)
+        file_results.append({"filename": filename, "fields": gen_fields})
+
+    patient_name = request.form.get("patient_name") or merged_fields.get("patient_name") or ""
+    dob = request.form.get("dob") or merged_fields.get("dob") or ""
+    doi = request.form.get("doi") or merged_fields.get("doi") or ""
+    dos = request.form.get("dos") or merged_fields.get("dos") or ""
+
+    vng = any(k in merged_fields for k in ("pursuits score", "Saccades Score", "Fixations score", "Dysfunctional scale"))
+    ct_sib = any(k in merged_fields for k in ("Standard score", "Proprioception score", "Visual score", "Vestibular score"))
+    creyos = any(k in merged_fields for k in ("rpq score", "pcl-5 score", "psqi score", "phq-9 score", "gad-7 score"))
+
+    html_report = render_report(
+        fields=merged_fields,
+        patient_name=patient_name,
+        dob=dob,
+        doi=doi,
+        dos=dos,
+        vng=vng,
+        ct_sib=ct_sib,
+        creyos=creyos,
+    )
+
+    pdf_gcs_uri = ""
+    try:
+        pdf_bytes = html_to_pdf(html_report)
+        pdf_blob_name = f"interpretation_report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.pdf"
+        pdf_gcs_uri = upload_bytes_to_bucket(pdf_bytes, pdf_blob_name, content_type="application/pdf")
+    except Exception:
+        pdf_gcs_uri = ""
+
+    safe_merged_fields = firestore_safe_dict(merged_fields)
+
+    db.collection("reports").add({
+        "source_files": [fr.get("filename") for fr in file_results],
+        "first_gcs_uri": first_blob_uri,
+        "merged_fields": safe_merged_fields,
+        "report_html": html_report,
+        "report_pdf_gcs_uri": pdf_gcs_uri,
+        "patient_name": patient_name,
+        "dob": dob,
+        "doi": doi,
+        "dos": dos,
+        "tests_detected": {"VNG": vng, "CTSIB": ct_sib, "Creyos": creyos},
+        "created_utc": datetime.utcnow().isoformat() + "Z",
+    })
+
+    return jsonify({
+        "source_files": [fr.get("filename") for fr in file_results],
+        "file_results": file_results,
+        "tests_detected": {"VNG": vng, "CTSIB": ct_sib, "Creyos": creyos},
+        "patient": {"patient_name": patient_name, "dob": dob, "doi": doi, "dos": dos},
+        "merged_fields": merged_fields,
+        "report_html": html_report,
+        "report_pdf_gcs_uri": pdf_gcs_uri,
+    }), 200
+
+
+if __name__ == "__main__":
+    # For local testing; in Cloud Run Gunicorn will handle serving the app
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)

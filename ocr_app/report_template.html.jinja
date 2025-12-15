@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.4; margin: 20px; }
+    h2 { margin-top: 1.2em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0.5em; }
+    th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
+    .section { margin-bottom: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Traumatic Brain Injury Report</h1>
+
+  <div class="section">
+    <h2>History</h2>
+    <p>
+      {{ patient_name }}{% if dob %} (DOB: {{ dob }}){% endif %}
+      presented for evaluation{% if doi %} related to injuries sustained on {{ doi }}{% endif %}.
+      {% if dos %}Testing occurred on {{ dos }}.{% endif %}
+    </p>
+
+    {% if vng %}
+      <p>Oculometric testing was performed using the RightEye system.</p>
+    {% endif %}
+    {% if ct_sib %}
+      <p>A sensory-integration and balance assessment using the BTrackS system was completed.</p>
+    {% endif %}
+    {% if creyos %}
+      <p>Creyos cognitive and neuropsychological testing was conducted to further evaluate cognitive functioning.</p>
+    {% endif %}
+  </div>
+
+  {% if vng %}
+  <div class="section">
+    <h2>Oculomotor Assessment</h2>
+
+    {% set pursuits = fields.get("pursuits score", "") %}
+    {% set saccades = fields.get("Saccades Score", "") %}
+    {% set fixations = fields.get("Fixations score", "") %}
+    {% set eyeq = fields.get("Dysfunctional scale", "") %}
+
+    <table>
+      <tr><th>Metric</th><th>Score</th><th>Interpretation</th></tr>
+
+      <tr>
+        <td>Smooth Pursuit</td>
+        <td>{{ pursuits }}</td>
+        <td>
+          {% if pursuits %}
+            {% set p = pursuits|int %}
+            {% if p <= 24 %}Severe dysfunction{% elif p < 50 %}Moderate dysfunction{% elif p < 75 %}Mild dysfunction{% else %}Normal{% endif %}
+          {% endif %}
+        </td>
+      </tr>
+
+      <tr>
+        <td>Saccades</td>
+        <td>{{ saccades }}</td>
+        <td>
+          {% if saccades %}
+            {% set s = saccades|int %}
+            {% if s <= 24 %}Severe dysfunction{% elif s < 50 %}Moderate dysfunction{% elif s < 75 %}Mild dysfunction{% else %}Normal{% endif %}
+          {% endif %}
+        </td>
+      </tr>
+
+      <tr>
+        <td>Fixations</td>
+        <td>{{ fixations }}</td>
+        <td>
+          {% if fixations %}
+            {% set f = fixations|int %}
+            {% if f <= 24 %}Severe dysfunction{% elif f < 50 %}Moderate dysfunction{% elif f < 75 %}Mild dysfunction{% else %}Normal{% endif %}
+          {% endif %}
+        </td>
+      </tr>
+
+      <tr>
+        <td>Dysfunctional Scale (EyeQ)</td>
+        <td>{{ eyeq }}</td>
+        <td>
+          {% if eyeq %}
+            {% set e = eyeq|int %}
+            {% if e <= 24 %}Severe dysfunction{% elif e < 50 %}Moderate dysfunction{% elif e < 75 %}Mild dysfunction{% else %}Normal{% endif %}
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+  {% endif %}
+
+</body>
+</html>

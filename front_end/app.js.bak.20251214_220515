@@ -1,0 +1,129 @@
+// Basic drag-and-drop uploader for medical documents
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const fileList = document.getElementById('file-list');
+const resultDiv = document.getElementById('result');
+
+// Replace this with your deployed Cloud Run service URL, e.g. https://tbi-backend-abcdef-uc.a.run.app/upload
+const BACKEND_UPLOAD_URL = 'https://tbi-backend-447216852170.us-central1.run.app/upload';
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('hover');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('hover');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('hover');
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
+});
+
+fileInput.addEventListener('change', () => {
+    const files = Array.from(fileInput.files);
+    handleFiles(files);
+});
+
+function handleFiles(files) {
+    fileList.innerHTML = '';
+    resultDiv.style.display = 'none';
+    const formData = new FormData();
+    files.forEach((file) => {
+        formData.append('files', file);
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.textContent = file.name;
+        fileList.appendChild(item);
+    });
+    if (files.length > 0) {
+        uploadFiles(formData);
+    }
+}
+
+async function uploadFiles(formData) {
+    dropZone.textContent = 'Uploading…';
+    try {
+        const response = await fetch(BACKEND_UPLOAD_URL, {
+            method: 'POST',
+            body: formData,
+        });
+        if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
+        }
+        const data = await response.json();
+        showResults(data);
+    } catch (error) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+    } finally {
+        dropZone.textContent = 'Drag & drop files here or click to select';
+    }
+}
+
+function showResults(data) {
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '';
+
+    // The backend returns a single object with report_html/report_pdf_gcs_uri + file_results
+    const resp = Array.isArray(data) ? { file_results: data } : (data || {});
+    const files = Array.isArray(resp.file_results) ? resp.file_results : [];
+
+    // Top-level summary
+    const summary = document.createElement('div');
+    summary.style.marginBottom = '16px';
+
+    if (resp.tests_detected) {
+        summary.innerHTML += `<p><strong>Tests detected:</strong> ${JSON.stringify(resp.tests_detected)}</p>`;
+    }
+
+    if (resp.merged_fields) {
+        summary.innerHTML += `<details><summary><strong>Merged fields</strong></summary><pre>${JSON.stringify(resp.merged_fields, null, 2)}</pre></details>`;
+    }
+
+    // Top-level report HTML/PDF
+    if (resp.report_html) {
+        summary.innerHTML += `<div style="border:1px solid #ccc;padding:8px;margin-top:8px;">${resp.report_html}</div>`;
+    }
+
+    if (resp.report_pdf_gcs_uri) {
+        const httpsUrl = resp.report_pdf_gcs_uri.startsWith('gs://')
+            ? 'https://storage.googleapis.com/' + resp.report_pdf_gcs_uri.substring(5)
+            : resp.report_pdf_gcs_uri;
+        summary.innerHTML += `<p style="margin-top:8px;"><a href="${httpsUrl}" target="_blank">Download PDF Report</a></p>`;
+    }
+
+    resultDiv.appendChild(summary);
+
+    // Per-file results
+    files.forEach((entry) => {
+        const div = document.createElement('div');
+        div.style.borderTop = "1px solid #eee";
+        div.style.paddingTop = "12px";
+        div.style.marginTop = "12px";
+
+        div.innerHTML = `<strong>${entry.filename || "File"}</strong>`;
+
+        if (entry.error) {
+            div.innerHTML += `<p style="color:#b00020;"><strong>Error:</strong> ${entry.error}</p>`;
+        }
+
+        if (entry.fields) {
+            div.innerHTML += `<details><summary>Extracted fields</summary><pre>${JSON.stringify(entry.fields, null, 2)}</pre></details>`;
+        }
+
+        if (entry.warning) {
+            div.innerHTML += `<p><strong>Warning:</strong> ${entry.warning}</p>`;
+        }
+
+        resultDiv.appendChild(div);
+    });
+}
+
+

@@ -1,0 +1,27 @@
+# Cloud Shell / OS junk
+.bash_history
+.bashrc
+.bash_logout
+.profile
+.lesshst
+.sudo_as_admin_successful
+
+# Editors / IDE
+.vscode/
+.codeoss/
+
+# Caches
+.cache/
+.npm/
+.local/
+.gsutil/
+.gemini/
+.rustup/
+__pycache__/
+*.pyc
+
+# Archives
+*.zip
+
+# PDFs (keep repo clean; store samples elsewhere)
+*.pdf

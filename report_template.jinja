@@ -1,0 +1,29 @@
+Patient Name: {{ patient_full_name }}
+Date of Birth: {{ dob }}
+Date of Injury: {{ doi }}
+Date of Testing: {{ dos }}
+
+{% if vng %}
+Oculomotor Assessment:
+Smooth Pursuit: {{ pursuits_score }} – {{ pursuits_interpretation }}
+Saccades: {{ saccades_score }} – {{ saccades_interpretation }}
+Fixations: {{ fixations_score }} – {{ fixations_interpretation }}
+Dysfunctional Scale: {{ dysfunctional_scale }} – {{ dysfunctional_interpretation }}
+{% endif %}
+
+{% if ct_sib %}
+Posturography Assessment:
+Standard Score Percentile: {{ standard_score }} – {{ standard_interpretation }}
+Proprioception Percentile: {{ proprioception_score }} – {{ proprioception_interpretation }}
+Visual Score Percentile: {{ visual_score }} – {{ visual_interpretation }}
+Vestibular Score Percentile: {{ vestibular_score }} – {{ vestibular_interpretation }}
+{% endif %}
+
+{% if creyos %}
+Neuropsychiatric Assessment:
+RPQ Score: {{ rpq_score }}/64 – {{ rpq_interpretation }}
+PCL-5 Score: {{ pcl_5_score }}/80 – {{ pcl_5_interpretation }}
+PSQI Score: {{ psqi_score }}/21 – {{ psqi_interpretation }}
+PHQ-9 Score: {{ phq_9_score }}/27 – {{ phq_9_interpretation }}
+GAD-7 Score: {{ gad_7_score }}/21 – {{ gad_7_interpretation }}
+{% endif %}

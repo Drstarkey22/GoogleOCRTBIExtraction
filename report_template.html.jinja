@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.4; margin: 20px; }
+    h2 { margin-top: 1.2em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0.5em; }
+    th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
+    .section { margin-bottom: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Traumatic Brain Injury Report</h1>
+  <div class="section">
+    <h2>History</h2>
+    <p>{{ patient_full_name }} is a {{ age }}-year-old {{ sex }} who presented for evaluation related to injuries sustained on {{ doi }}. Testing occurred on {{ dos }}.</p>
+    {% if vng %}<p>Oculometric testing was performed using the RightEye system.</p>{% endif %}
+    {% if ct_sib %}<p>A sensory-integration and balance assessment was completed using the BTrackS system.</p>{% endif %}
+    {% if creyos %}<p>Creyos cognitive and neuropsychological testing was also conducted.</p>{% endif %}
+  </div>
+
+  {% if vng %}
+  <div class="section">
+    <h2>Oculomotor Assessment</h2>
+    <table>
+      <tr><th>Metric</th><th>Score</th><th>Interpretation</th></tr>
+      <tr><td>Smooth Pursuit</td><td>{{ pursuits_score }}</td><td>{{ pursuits_interpretation }}</td></tr>
+      <tr><td>Saccades</td><td>{{ saccades_score }}</td><td>{{ saccades_interpretation }}</td></tr>
+      <tr><td>Fixations</td><td>{{ fixations_score }}</td><td>{{ fixations_interpretation }}</td></tr>
+      <tr><td>Dysfunctional Scale</td><td>{{ dysfunctional_scale }}</td><td>{{ dysfunctional_interpretation }}</td></tr>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if ct_sib %}
+  <div class="section">
+    <h2>Posturography Assessment</h2>
+    <table>
+      <tr><th>Parameter</th><th>Percentile</th><th>Interpretation</th></tr>
+      <tr><td>Standard Score</td><td>{{ standard_score }}</td><td>{{ standard_interpretation }}</td></tr>
+      <tr><td>Proprioception</td><td>{{ proprioception_score }}</td><td>{{ proprioception_interpretation }}</td></tr>
+      <tr><td>Visual</td><td>{{ visual_score }}</td><td>{{ visual_interpretation }}</td></tr>
+      <tr><td>Vestibular</td><td>{{ vestibular_score }}</td><td>{{ vestibular_interpretation }}</td></tr>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if creyos %}
+  <div class="section">
+    <h2>Neuropsychiatric Assessment</h2>
+    <table>
+      <tr><th>Screen</th><th>Score</th><th>Interpretation</th></tr>
+      <tr><td>RPQ</td><td>{{ rpq_score }}/64</td><td>{{ rpq_interpretation }}</td></tr>
+      <tr><td>PCL-5</td><td>{{ pcl_5_score }}/80</td><td>{{ pcl_5_interpretation }}</td></tr>
+      <tr><td>PSQI</td><td>{{ psqi_score }}/21</td><td>{{ psqi_interpretation }}</td></tr>
+      <tr><td>PHQ-9</td><td>{{ phq_9_score }}/27</td><td>{{ phq_9_interpretation }}</td></tr>
+      <tr><td>GAD-7</td><td>{{ gad_7_score }}/21</td><td>{{ gad_7_interpretation }}</td></tr>
+    </table>
+  </div>
+  {% endif %}
+</body>
+</html>

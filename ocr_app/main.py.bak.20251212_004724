@@ -1,0 +1,223 @@
+"""
+Flask application for processing uploaded documents with Google Document AI and storing results in Firestore.
+
+The `/upload` endpoint accepts multiple files via multipart/form-data.  Each file is uploaded to Cloud Storage, processed with the configured Document AI OCR processor, and stored in Firestore along with the extracted text.
+
+Environment variables required:
+
+* `PROJECT_ID` – ID of the Google Cloud project.
+* `PROCESSOR_ID` – ID of the Document AI processor (OCR).
+* `PROCESSOR_LOCATION` – Region of the processor, e.g. `us`.
+* `BUCKET_NAME` – Name of the Cloud Storage bucket to store uploads.
+
+You can deploy this application to Cloud Run by building the container image and setting these variables during deployment.
+"""
+
+import os
+from typing import List, Dict
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+from google.cloud import storage  # type: ignore
+from google.cloud import firestore  # type: ignore
+from google.cloud import documentai_v1 as documentai  # type: ignore
+from google.cloud import documentai_v1beta3 as documentai_beta  # type: ignore
+from jinja2 import Template  # type: ignore
+from google.protobuf.json_format import MessageToDict  # type: ignore
+import json
+
+app = Flask(__name__)
+CORS(app)
+
+PROJECT_ID = os.getenv("PROJECT_ID")
+PROCESSOR_ID = os.getenv("PROCESSOR_ID")
+PROCESSOR_LOCATION = os.getenv("PROCESSOR_LOCATION", "us")
+BUCKET_NAME = os.getenv("BUCKET_NAME")
+GEN_EXTRACTOR_ID = os.getenv("GEN_EXTRACTOR_ID")
+GEN_EXTRACTOR_LOCATION = os.getenv("GEN_EXTRACTOR_LOCATION", "us")
+
+
+def get_storage_client() -> storage.Client:
+    """Instantiate and return a Cloud Storage client."""
+    return storage.Client(project=PROJECT_ID)
+
+
+def get_firestore_client() -> firestore.Client:
+    """Instantiate and return a Firestore client."""
+    return firestore.Client(project=PROJECT_ID)
+
+
+def process_document(content: bytes, mime_type: str = "application/pdf") -> documentai.Document:
+    """Send the given bytes to the Document AI OCR processor and return the processed document.
+
+    Args:
+        content: Raw bytes of the document to process.
+        mime_type: MIME type of the document (default: application/pdf).
+
+    Returns:
+        A `documentai.Document` object containing extracted text and layout information.
+    """
+    if not (PROJECT_ID and PROCESSOR_ID):
+        raise RuntimeError("PROJECT_ID and PROCESSOR_ID must be set in environment variables")
+    name = f"projects/{PROJECT_ID}/locations/{PROCESSOR_LOCATION}/processors/{PROCESSOR_ID}"
+    client = documentai.DocumentProcessorServiceClient()
+    raw_document = documentai.RawDocument(content=content, mime_type=mime_type)
+    request = documentai.ProcessRequest(name=name, raw_document=raw_document)
+    result = client.process_document(request=request)
+    return result.document
+
+
+def upload_to_bucket(file_obj, filename: str) -> str:
+    """Upload the file object to the configured bucket and return its public URI.
+
+    Args:
+        file_obj: A file-like object positioned at the beginning of the file.
+        filename: Name to use for the blob in Cloud Storage.
+
+    Returns:
+        The URI of the uploaded object (gs://bucket/file).
+    """
+    if not BUCKET_NAME:
+        raise RuntimeError("BUCKET_NAME must be set in environment variables")
+    client = get_storage_client()
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(filename)
+    # Upload file content
+    blob.upload_from_file(file_obj)
+    return f"gs://{BUCKET_NAME}/{filename}"
+
+def upload_json_to_bucket(data: Dict, filename: str) -> str:
+    """Upload a JSON-serializable dictionary as a JSON file to Cloud Storage.
+
+    Args:
+        data: Dictionary to serialize to JSON and upload.
+        filename: Name of the JSON file in Cloud Storage.
+
+    Returns:
+        gs:// URI of the uploaded JSON file.
+    """
+    if not BUCKET_NAME:
+        raise RuntimeError("BUCKET_NAME must be set in environment variables")
+    client = get_storage_client()
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(filename)
+    blob.upload_from_string(json.dumps(data), content_type="application/json")
+    return f"gs://{BUCKET_NAME}/{filename}"
+
+def extract_fields_generative(gcs_uri: str) -> Dict:
+    """Call the Document AI generative extractor to return structured fields.
+
+    This function returns a dictionary mapping field names to their text values.
+    If the generative extractor environment variables are not set, it returns an empty dict.
+
+    Args:
+        gcs_uri: The Cloud Storage URI of the document (PDF) to process.
+
+    Returns:
+        A dictionary of extracted field values keyed by field name.
+    """
+    if not GEN_EXTRACTOR_ID:
+        return {}
+    client = documentai_beta.DocumentProcessorServiceClient()
+    name = f"projects/{PROJECT_ID}/locations/{GEN_EXTRACTOR_LOCATION}/processors/{GEN_EXTRACTOR_ID}"
+    # Define the list of fields you expect to extract. These should match your schema names.
+    fields = [
+        "attention_percentile",
+        "deductive_reasoning_percentile",
+        "dysfunctional_scale",
+        "episodic_memory_percentile",
+        "fixations_score",
+        "gad_7_score",
+        "mental_rotation_percentile",
+        "pursuits_score",
+        "saccades_score",
+        "standard_score_percentile",
+        "proprioception_score_percentile",
+        "visual_score_percentile",
+        "vestibular_score_percentile",
+        "rpq_score",
+        "pcl_5_score",
+        "psqi_score",
+        "phq_9_score",
+        "visuospatial_working_memory_percentile",
+        "working_memory_test_percentile",
+        "spatial_short_term_memory_percentile",
+        "verbal_short_term_memory_percentile",
+        "polygons_percentile",
+        "mental_rotation_percentile",
+        "verbal_reasoning_percentile",
+        "planning_percentile",
+        "response_inhibition_percentile",
+    ]
+    request = documentai_beta.GenerativeExtractRequest(
+        name=name,
+        input_document=documentai_beta.GenerativeExtractRequest.InputDocument(
+            gcs_document=documentai_beta.GcsDocument(gcs_uri=gcs_uri, mime_type="application/pdf")
+        ),
+        fields=fields,
+    )
+    response = client.generative_extract(request=request)
+    result = {}
+    for field in response.fields:
+        result[field.field_name] = field.field_value.text
+    return result
+
+
+@app.route("/upload", methods=["POST"])
+def upload_endpoint() -> tuple:
+    """Handle file uploads, process them with Document AI, and store results.
+
+    Expects a multipart/form-data payload with one or more file fields named `files`.
+    Returns JSON containing an array of results for each file.
+    """
+    if 'files' not in request.files:
+        return jsonify({"error": "No files part in the request"}), 400
+    files: List = request.files.getlist('files')
+    results = []
+    db = get_firestore_client()
+    for file_storage in files:
+        filename = file_storage.filename or "document"
+        # Save the file to GCS
+        # Rewind pointer to beginning in case it's been read previously
+        file_storage.stream.seek(0)
+        blob_uri = upload_to_bucket(file_storage.stream, filename)
+        # Read bytes for OCR processing; create a separate copy since upload_to_bucket
+        # may read the stream.  Seek to start again.
+        file_storage.stream.seek(0)
+        file_bytes = file_storage.read()
+        # Determine mime type based on filename extension
+        mime_type = "application/pdf"
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff')):
+            mime_type = "image/jpeg"
+        # Process with Document AI
+        try:
+            doc = process_document(content=file_bytes, mime_type=mime_type)
+        except Exception as e:
+            # Capture the error but continue with other files
+            results.append({"filename": filename, "error": str(e)})
+            continue
+        extracted_text = doc.text or ""
+        # Call generative extractor to get structured fields from GCS URI
+        gen_fields = extract_fields_generative(blob_uri)
+        # Persist to Firestore; include text, fields, and raw document dictionary
+        # Convert the Document AI response to a dictionary for storage
+        doc_dict = MessageToDict(doc._pb)
+        # Upload the full document JSON to Cloud Storage as a separate file to avoid Firestore size limits
+        json_blob_name = f"{filename}_document.json"
+        doc_gcs_uri = upload_json_to_bucket(doc_dict, json_blob_name)
+        # Store metadata and extracted information in Firestore; reference the JSON file rather than storing its contents
+        db.collection('documents').add({
+            'filename': filename,
+            'gcs_uri': blob_uri,
+            'text': extracted_text,
+            'fields': gen_fields,
+            'document_gcs_uri': doc_gcs_uri,
+        })
+        results.append({"filename": filename, "text": extracted_text, "fields": gen_fields})
+    return jsonify(results), 200
+
+
+if __name__ == "__main__":
+    # For local testing; in Cloud Run Gunicorn will handle serving the app
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
