@@ -7,144 +7,129 @@
     h1 { font-size: 18pt; margin-bottom: 0.5em; }
     h2 { font-size: 14pt; margin-top: 1.5em; margin-bottom: 0.5em; }
     h3 { font-size: 12pt; margin-top: 1em; margin-bottom: 0.3em; }
+    h4 { font-size: 11pt; margin-top: 1em; margin-bottom: 0.3em; }
     table { width: 100%; border-collapse: collapse; margin-top: 0.5em; margin-bottom: 1em; }
     th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
     th { background-color: #f5f5f5; }
     .section { margin-bottom: 1.5em; }
     .summary-table { text-align: center; }
     .summary-table th, .summary-table td { text-align: center; }
-    ul { margin-top: 0.5em; }
+    ul, ol { margin-top: 0.5em; }
     li { margin-bottom: 0.3em; }
-    .flag-red { color: #b00020; }
-    .flag-orange { color: #e65100; }
-    .flag-yellow { color: #f9a825; }
   </style>
 </head>
 <body>
-  <h1>Traumatic Brain Injury Report</h1>
+  <h2>History:</h2>
+  <p>
+    {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} is a 
+    {% if age %}{{ age }}-year-old{% else %}-year-old{% endif %} 
+    {% if sex %}{{ sex }}{% endif %} who presented for evaluation related to injuries sustained 
+    {% if doi %}as a direct result of a traumatic incident on {{ doi }}{% endif %}. 
+    {% if vng %}Oculometric testing was performed using the RightEye system to assess potential visual, oculomotor, and neurological deficits.{% endif %}
+    {% if ct_sib %}A sensory-integration and balance assessment using the BTrackS system was completed to evaluate postural stability and functional impairments.{% endif %}
+    {% if creyos %}The patient also reported neurocognitive or psychological symptoms that began or worsened after the incident. Due to concerns such as impaired attention, slowed processing, or memory difficulties, Creyos cognitive and neuropsychological testing was conducted to further evaluate cognitive functioning.{% endif %}
+  </p>
 
-  <div class="section">
-    <h2>History</h2>
-    <p>
-      {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} is a 
-      {% if age %}{{ age }}-year-old{% else %}patient{% endif %} 
-      {% if sex %}{{ sex }}{% endif %} who presented for evaluation related to injuries sustained 
-      {% if doi %}as a direct result of a traumatic incident on {{ doi }}{% else %}on a reported date of injury{% endif %}. 
-      {% if dos %}Testing occurred on {{ dos }}.{% endif %}
-    </p>
-    {% if vng %}
-    <p>Oculometric testing was performed using the RightEye system to assess potential visual, oculomotor, and neurological deficits.</p>
-    {% endif %}
-    {% if ct_sib %}
-    <p>A sensory-integration and balance assessment using the BTrackS system was completed to evaluate postural stability and functional impairments.</p>
-    {% endif %}
-    {% if creyos %}
-    <p>The patient also reported neurocognitive or psychological symptoms that began or worsened after the incident. Due to concerns such as impaired attention, slowed processing, or memory difficulties, Creyos cognitive and neuropsychological testing was conducted to further evaluate cognitive functioning.</p>
-    {% endif %}
-  </div>
+  <h2>Summary:</h2>
 
-  <div class="section">
-    <h2>Summary</h2>
+  {% if vng %}
+  <h3>Oculomotor Assessment:</h3>
+  <table class="summary-table">
+    <tr>
+      <th>Smooth Pursuit</th>
+      <th>Saccades</th>
+      <th>Fixations</th>
+      <th>Dysfunctional scale</th>
+    </tr>
+    <tr>
+      <td>{{ pursuits_score }}<br><small>{{ pursuits_interpretation }}</small></td>
+      <td>{{ saccades_score }}<br><small>{{ saccades_interpretation }}</small></td>
+      <td>{{ fixations_score }}<br><small>{{ fixations_interpretation }}</small></td>
+      <td>{{ dysfunctional_scale }}<br><small>{{ dysfunctional_interpretation }}</small></td>
+    </tr>
+  </table>
+  {% endif %}
 
-    {% if vng %}
-    <h3>Oculomotor Assessment:</h3>
-    <table class="summary-table">
-      <tr>
-        <th>Smooth Pursuit</th>
-        <th>Saccades</th>
-        <th>Fixations</th>
-        <th>Dysfunctional Scale</th>
-      </tr>
-      <tr>
-        <td>{{ pursuits_score }}<br><small>{{ pursuits_interpretation }}</small></td>
-        <td>{{ saccades_score }}<br><small>{{ saccades_interpretation }}</small></td>
-        <td>{{ fixations_score }}<br><small>{{ fixations_interpretation }}</small></td>
-        <td>{{ dysfunctional_scale }}<br><small>{{ dysfunctional_interpretation }}</small></td>
-      </tr>
-    </table>
+  {% if ct_sib %}
+  <h3>Posturography Assessment:</h3>
+  <table class="summary-table">
+    <tr>
+      <th>Standard score</th>
+      <th>Proprioception score</th>
+      <th>Visual score</th>
+      <th>Vestibular score</th>
+    </tr>
+    <tr>
+      <td>{% if standard_score and standard_score > 0 %}{{ standard_score }}{{ 'st' if standard_score == 1 else ('nd' if standard_score == 2 else ('rd' if standard_score == 3 else 'th')) }}{% else %}N/A{% endif %}</td>
+      <td>{% if proprioception_score and proprioception_score > 0 %}{{ proprioception_score }}{{ 'st' if proprioception_score == 1 else ('nd' if proprioception_score == 2 else ('rd' if proprioception_score == 3 else 'th')) }}{% else %}N/A{% endif %}</td>
+      <td>{% if visual_score and visual_score > 0 %}{{ visual_score }}{{ 'st' if visual_score == 1 else ('nd' if visual_score == 2 else ('rd' if visual_score == 3 else 'th')) }}{% else %}N/A{% endif %}</td>
+      <td>{% if vestibular_score and vestibular_score > 0 %}{{ vestibular_score }}{{ 'st' if vestibular_score == 1 else ('nd' if vestibular_score == 2 else ('rd' if vestibular_score == 3 else 'th')) }}{% else %}N/A{% endif %}</td>
+    </tr>
+  </table>
+  {% endif %}
+
+  {% if creyos %}
+  <h3>Neuropsychiatric Screen / Neurocognitive Assessment:</h3>
+  <table>
+    <tr><th>Screen</th><th>Score</th><th>Interpretation</th></tr>
+    <tr><td>RPQ</td><td>{{ rpq_score }}/64</td><td>{{ rpq_interpretation }}</td></tr>
+    <tr><td>PCL-5</td><td>{{ pcl_5_score }}/80</td><td>{{ pcl_5_interpretation }}</td></tr>
+    <tr><td>PSQI</td><td>{{ psqi_score }}/21</td><td>{{ psqi_interpretation }}</td></tr>
+    <tr><td>PHQ-9</td><td>{{ phq_9_score }}/27</td><td>{{ phq_9_interpretation }}</td></tr>
+    <tr><td>GAD-7</td><td>{{ gad_7_score }}/21</td><td>{{ gad_7_interpretation }}</td></tr>
+  </table>
+
+  {% if cognitive_domains %}
+  <table>
+    <tr><th>Domains</th><th>Interpretation</th></tr>
+    <tr><td>Memory</td><td>{{ memory_domain_interpretation }}</td></tr>
+    <tr><td>Visuospatial / Visual Processing</td><td>{{ visuospatial_domain_interpretation }}</td></tr>
+    <tr><td>Reasoning</td><td>{{ reasoning_domain_interpretation }}</td></tr>
+    <tr><td>Attention</td><td>{{ attention_domain_interpretation }}</td></tr>
+    <tr><td>Executive Function</td><td>{{ executive_domain_interpretation }}</td></tr>
+  </table>
+
+  <table>
+    <tr><th>Domain</th><th>Tasks</th><th>Percentile</th><th>Task Interpretation</th></tr>
+    {% if visuospatial_wm_percentile %}
+    <tr><td>Memory</td><td>Visuospatial Working Memory (Number Ladder)</td><td>{{ visuospatial_wm_percentile }}{{ 'st' if visuospatial_wm_percentile == 1 else ('nd' if visuospatial_wm_percentile == 2 else ('rd' if visuospatial_wm_percentile == 3 else 'th')) }}</td><td>{{ visuospatial_wm_interpretation }}</td></tr>
     {% endif %}
-
-    {% if ct_sib %}
-    <h3>Posturography Assessment:</h3>
-    <table class="summary-table">
-      <tr>
-        <th>Standard Score</th>
-        <th>Proprioception Score</th>
-        <th>Visual Score</th>
-        <th>Vestibular Score</th>
-      </tr>
-      <tr>
-        <td>{% if standard_score and standard_score > 0 %}{{ standard_score }}{{ 'st' if standard_score == 1 else ('nd' if standard_score == 2 else ('rd' if standard_score == 3 else 'th')) }}{% else %}N/A{% endif %}</td>
-        <td>{% if proprioception_score and proprioception_score > 0 %}{{ proprioception_score }}{{ 'st' if proprioception_score == 1 else ('nd' if proprioception_score == 2 else ('rd' if proprioception_score == 3 else 'th')) }}{% else %}N/A{% endif %}</td>
-        <td>{% if visual_score and visual_score > 0 %}{{ visual_score }}{{ 'st' if visual_score == 1 else ('nd' if visual_score == 2 else ('rd' if visual_score == 3 else 'th')) }}{% else %}N/A{% endif %}</td>
-        <td>{% if vestibular_score and vestibular_score > 0 %}{{ vestibular_score }}{{ 'st' if vestibular_score == 1 else ('nd' if vestibular_score == 2 else ('rd' if vestibular_score == 3 else 'th')) }}{% else %}N/A{% endif %}</td>
-      </tr>
-    </table>
+    {% if working_memory_percentile %}
+    <tr><td>Memory</td><td>Working Memory (Token Search)</td><td>{{ working_memory_percentile }}{{ 'st' if working_memory_percentile == 1 else ('nd' if working_memory_percentile == 2 else ('rd' if working_memory_percentile == 3 else 'th')) }}</td><td>{{ working_memory_interpretation }}</td></tr>
     {% endif %}
-
-    {% if creyos %}
-    <h3>Neuropsychiatric Screen / Neurocognitive Assessment:</h3>
-    <table>
-      <tr><th>Screen</th><th>Score</th><th>Interpretation</th></tr>
-      <tr><td>RPQ</td><td>{{ rpq_score }}/64</td><td>{{ rpq_interpretation }}</td></tr>
-      <tr><td>PCL-5</td><td>{{ pcl_5_score }}/80</td><td>{{ pcl_5_interpretation }}</td></tr>
-      <tr><td>PSQI</td><td>{{ psqi_score }}/21</td><td>{{ psqi_interpretation }}</td></tr>
-      <tr><td>PHQ-9</td><td>{{ phq_9_score }}/27</td><td>{{ phq_9_interpretation }}</td></tr>
-      <tr><td>GAD-7</td><td>{{ gad_7_score }}/21</td><td>{{ gad_7_interpretation }}</td></tr>
-    </table>
-
-    {% if cognitive_domains %}
-    <table>
-      <tr><th>Domains</th><th>Interpretation</th></tr>
-      <tr><td>Memory</td><td>{{ memory_domain_interpretation }}</td></tr>
-      <tr><td>Visuospatial / Visual Processing</td><td>{{ visuospatial_domain_interpretation }}</td></tr>
-      <tr><td>Reasoning</td><td>{{ reasoning_domain_interpretation }}</td></tr>
-      <tr><td>Attention</td><td>{{ attention_domain_interpretation }}</td></tr>
-      <tr><td>Executive Function</td><td>{{ executive_domain_interpretation }}</td></tr>
-    </table>
-
-    <table>
-      <tr><th>Domain</th><th>Tasks</th><th>Percentile</th><th>Task Interpretation</th></tr>
-      {% if visuospatial_wm_percentile %}
-      <tr><td>Memory</td><td>Visuospatial Working Memory (Number Ladder)</td><td>{{ visuospatial_wm_percentile }}th</td><td>{{ visuospatial_wm_interpretation }}</td></tr>
-      {% endif %}
-      {% if working_memory_percentile %}
-      <tr><td>Memory</td><td>Working Memory (Token Search)</td><td>{{ working_memory_percentile }}th</td><td>{{ working_memory_interpretation }}</td></tr>
-      {% endif %}
-      {% if spatial_stm_percentile %}
-      <tr><td>Memory</td><td>Spatial Short-Term Memory (Spatial Span)</td><td>{{ spatial_stm_percentile }}th</td><td>{{ spatial_stm_interpretation }}</td></tr>
-      {% endif %}
-      {% if verbal_stm_percentile %}
-      <tr><td>Memory</td><td>Verbal Short-Term Memory (Digit Span)</td><td>{{ verbal_stm_percentile }}th</td><td>{{ verbal_stm_interpretation }}</td></tr>
-      {% endif %}
-      {% if episodic_memory_percentile %}
-      <tr><td>Memory</td><td>Episodic Memory (Paired Associates)</td><td>{{ episodic_memory_percentile }}th</td><td>{{ episodic_memory_interpretation }}</td></tr>
-      {% endif %}
-      {% if polygons_percentile %}
-      <tr><td>Visuospatial / Visual Processing</td><td>Visuospatial Processing (Polygons)</td><td>{{ polygons_percentile }}th</td><td>{{ polygons_interpretation }}</td></tr>
-      {% endif %}
-      {% if mental_rotation_percentile %}
-      <tr><td>Visuospatial / Visual Processing</td><td>Mental Rotation (Rotations)</td><td>{{ mental_rotation_percentile }}th</td><td>{{ mental_rotation_interpretation }}</td></tr>
-      {% endif %}
-      {% if deductive_reasoning_percentile %}
-      <tr><td>Reasoning</td><td>Deductive Reasoning</td><td>{{ deductive_reasoning_percentile }}th</td><td>{{ deductive_reasoning_interpretation }}</td></tr>
-      {% endif %}
-      {% if verbal_reasoning_percentile %}
-      <tr><td>Reasoning</td><td>Verbal Reasoning (Grammatical Reasoning)</td><td>{{ verbal_reasoning_percentile }}th</td><td>{{ verbal_reasoning_interpretation }}</td></tr>
-      {% endif %}
-      {% if attention_percentile %}
-      <tr><td>Attention</td><td>Attention (Feature Match)</td><td>{{ attention_percentile }}th</td><td>{{ attention_interpretation }}</td></tr>
-      {% endif %}
-      {% if planning_percentile %}
-      <tr><td>Executive Function</td><td>Planning (Spatial Planning)</td><td>{{ planning_percentile }}th</td><td>{{ planning_interpretation }}</td></tr>
-      {% endif %}
-      {% if response_inhibition_percentile %}
-      <tr><td>Executive Function</td><td>Response Inhibition (Double Trouble)</td><td>{{ response_inhibition_percentile }}th</td><td>{{ response_inhibition_interpretation }}</td></tr>
-      {% endif %}
-    </table>
+    {% if spatial_stm_percentile %}
+    <tr><td>Memory</td><td>Spatial Short-Term Memory (Spatial Span)</td><td>{{ spatial_stm_percentile }}{{ 'st' if spatial_stm_percentile == 1 else ('nd' if spatial_stm_percentile == 2 else ('rd' if spatial_stm_percentile == 3 else 'th')) }}</td><td>{{ spatial_stm_interpretation }}</td></tr>
     {% endif %}
+    {% if verbal_stm_percentile %}
+    <tr><td>Memory</td><td>Verbal Short-Term Memory (Digit Span)</td><td>{{ verbal_stm_percentile }}{{ 'st' if verbal_stm_percentile == 1 else ('nd' if verbal_stm_percentile == 2 else ('rd' if verbal_stm_percentile == 3 else 'th')) }}</td><td>{{ verbal_stm_interpretation }}</td></tr>
     {% endif %}
-  </div>
+    {% if episodic_memory_percentile %}
+    <tr><td>Memory</td><td>Episodic Memory (Paired Associates)</td><td>{{ episodic_memory_percentile }}{{ 'st' if episodic_memory_percentile == 1 else ('nd' if episodic_memory_percentile == 2 else ('rd' if episodic_memory_percentile == 3 else 'th')) }}</td><td>{{ episodic_memory_interpretation }}</td></tr>
+    {% endif %}
+    {% if polygons_percentile %}
+    <tr><td>Visuospatial / Visual Processing</td><td>Visuospatial Processing (Polygons)</td><td>{{ polygons_percentile }}{{ 'st' if polygons_percentile == 1 else ('nd' if polygons_percentile == 2 else ('rd' if polygons_percentile == 3 else 'th')) }}</td><td>{{ polygons_interpretation }}</td></tr>
+    {% endif %}
+    {% if mental_rotation_percentile %}
+    <tr><td>Visuospatial / Visual Processing</td><td>Mental Rotation (Rotations)</td><td>{{ mental_rotation_percentile }}{{ 'st' if mental_rotation_percentile == 1 else ('nd' if mental_rotation_percentile == 2 else ('rd' if mental_rotation_percentile == 3 else 'th')) }}</td><td>{{ mental_rotation_interpretation }}</td></tr>
+    {% endif %}
+    {% if deductive_reasoning_percentile %}
+    <tr><td>Reasoning</td><td>Deductive Reasoning</td><td>{{ deductive_reasoning_percentile }}{{ 'st' if deductive_reasoning_percentile == 1 else ('nd' if deductive_reasoning_percentile == 2 else ('rd' if deductive_reasoning_percentile == 3 else 'th')) }}</td><td>{{ deductive_reasoning_interpretation }}</td></tr>
+    {% endif %}
+    {% if verbal_reasoning_percentile %}
+    <tr><td>Reasoning</td><td>Verbal Reasoning (Grammatical Reasoning)</td><td>{{ verbal_reasoning_percentile }}{{ 'st' if verbal_reasoning_percentile == 1 else ('nd' if verbal_reasoning_percentile == 2 else ('rd' if verbal_reasoning_percentile == 3 else 'th')) }}</td><td>{{ verbal_reasoning_interpretation }}</td></tr>
+    {% endif %}
+    {% if attention_percentile %}
+    <tr><td>Attention</td><td>Attention (Feature Match)</td><td>{{ attention_percentile }}{{ 'st' if attention_percentile == 1 else ('nd' if attention_percentile == 2 else ('rd' if attention_percentile == 3 else 'th')) }}</td><td>{{ attention_interpretation }}</td></tr>
+    {% endif %}
+    {% if planning_percentile %}
+    <tr><td>Executive Function</td><td>Planning (Spatial Planning)</td><td>{{ planning_percentile }}{{ 'st' if planning_percentile == 1 else ('nd' if planning_percentile == 2 else ('rd' if planning_percentile == 3 else 'th')) }}</td><td>{{ planning_interpretation }}</td></tr>
+    {% endif %}
+    {% if response_inhibition_percentile %}
+    <tr><td>Executive Function</td><td>Response Inhibition (Double Trouble)</td><td>{{ response_inhibition_percentile }}{{ 'st' if response_inhibition_percentile == 1 else ('nd' if response_inhibition_percentile == 2 else ('rd' if response_inhibition_percentile == 3 else 'th')) }}</td><td>{{ response_inhibition_interpretation }}</td></tr>
+    {% endif %}
+  </table>
+  {% endif %}
+  {% endif %}
 
   {% if vng %}
   <div class="section">
@@ -167,7 +152,7 @@
     {% if saccades_score <= 74 %}
     <p>Saccadic movements are below the normal functional range. This is indicative of dysfunction at the cerebellum, brainstem, and frontal lobe.</p>
     {% endif %}
-    {% if fixations_score != 'N/A' and fixations_score <= 74 %}
+    {% if fixations_score and fixations_score <= 74 %}
     <p>Fixations are below the normal functional range. This is indicative of dysfunction in the neural integrator and brainstem.</p>
     {% endif %}
     <p>Dysfunctional Scale is {{ dysfunctional_scale }}.</p>
@@ -229,12 +214,12 @@
 
   {% if creyos %}
   <div class="section">
-    <h2>Neurocognitive Testing Battery</h2>
+    <h2>NEUROCOGNITIVE TESTING BATTERY</h2>
 
-    <h3>Technique:</h3>
+    <h3>Technique</h3>
     <p>Creyos (formerly Cambridge Brain Sciences) is a brain health assessment battery that accurately measures core elements of neuropsychiatric and cognitive function, including memory, attention, reasoning, and verbal abilities with a goal of aiding in identifying cognitive function issues early on and allowing timely initiation of therapeutic treatments in order to enhance chances of functional recovery.</p>
 
-    <h3>Findings:</h3>
+    <h3>Findings</h3>
     <p>The test results are included in the patient's chart. Results of the testing are summarized as follows:</p>
 
     <h4>Neuropsychiatric Screen</h4>
@@ -245,55 +230,63 @@
     {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} scored {{ pcl_5_score }}/80. {{ pcl_5_interpretation }}.</p>
 
     <p><strong>The Pittsburgh Sleep Quality Index (PSQI)</strong> was developed by Buysse et al. (1988), is a self-reported, 19-item scale which assesses sleep quality and disturbances over the previous month while also allowing for the monitoring of symptom changes and effects of treatment over time. It produces seven component scores, and one global score of sleep quality.<br>
-    {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} scored {{ psqi_score }}/21. {{ psqi_interpretation }}.</p>
+    {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} scored {{ psqi_score }}/21 {{ psqi_interpretation }}.</p>
 
     <p><strong>PHQ-9</strong> is a multipurpose instrument for objectively determining severity of initial depressive symptoms, while also allowing for the monitoring of symptom changes and effects of treatment over time. Results from the PHQ-9 must be used in conjunction with clinical judgement and other data as required to reach the appropriate conclusion.<br>
-    {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} scored {{ phq_9_score }}/27, which is indicative of {{ phq_9_interpretation | lower }}.</p>
+    {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} scored {{ phq_9_score }}/27, which is indicative of {{ phq_9_interpretation }}.</p>
 
     <p><strong>GAD-7</strong> is a multipurpose instrument for objectively determining severity of general anxiety symptoms, while also allowing for the monitoring of symptom changes and effects of treatment over time. Results from the GAD-7 must be used in conjunction with clinical judgement and other data as required to reach the appropriate conclusion.<br>
-    {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} scored {{ gad_7_score }}/21, which is indicative of {{ gad_7_interpretation | lower }}.</p>
+    {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} scored {{ gad_7_score }}/21, which is indicative of {{ gad_7_interpretation }}.</p>
 
-    {% if cognitive_domains %}
     <h4>Neurocognitive Assessment</h4>
     {% if visuospatial_wm_percentile %}
-    <p><strong>Visuospatial working memory test (Monkey Ladder Task):</strong> A variant on a task from the non-human primate literature. Sets of numbered squares are displayed on the screen at random locations. After a variable interval of time, the numbers disappear leaving just the blank squares and participants must respond by clicking the squares in ascending numerical sequence. It is a measure of visuospatial working memory, the ability to remember information about objects in space, and update memory based on changing circumstances. Patient falls in the {{ visuospatial_wm_percentile }}th Percentile.</p>
+    <p><strong>1. Visuospatial working memory test.</strong> Monkey Ladder Task. A variant on a task from the non-human primate literature (Inoue & Matsuzawa, 2007). Sets of numbered squares are displayed on the screen at random locations. After a variable interval of time, the numbers disappear leaving just the blank squares and participants must respond by clicking the squares in ascending numerical sequence. Difficulty is increased or decreased by one numbered box depending on whether the participant got the previous trial correct. After three errors, the task ends. Outcome measures are (i) maximum level completed and (ii) average score: the sum of the number of boxes in all successfully solved problems, divided by the number of successfully completed problems. It is a measure of visuospatial working memory, the ability to remember information about objects in space, and update memory based on changing circumstances which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ visuospatial_wm_percentile }}{{ 'st' if visuospatial_wm_percentile == 1 else ('nd' if visuospatial_wm_percentile == 2 else ('rd' if visuospatial_wm_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if working_memory_percentile %}
-    <p><strong>Working memory test (Token Search):</strong> A task that measures working memory capacity. Patient falls in the {{ working_memory_percentile }}th Percentile.</p>
+    <p><strong>2. Working memory.</strong> Token Search Task. Boxes are displayed on the screen, and behind each box is a token. When clicked, a box flips to reveal whether or not there is a token behind. Participants must find all of the tokens without returning to a location they have already looked. The outcome measure is the maximum level achieved, scored as the number of boxes where all tokens can be retrieved without revisiting a box. It is a measure of working memory, the ability to monitor items in memory and update memory based on changing circumstances which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ working_memory_percentile }}{{ 'st' if working_memory_percentile == 1 else ('nd' if working_memory_percentile == 2 else ('rd' if working_memory_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if spatial_stm_percentile %}
-    <p><strong>Spatial short-term memory test (Spatial Span):</strong> A test of spatial short-term memory capacity. Patient falls in the {{ spatial_stm_percentile }}th Percentile.</p>
+    <p><strong>3. Spatial short-term memory test.</strong> Spatial Span Task. Participants watch as a sequence of boxes change colour, and then must reproduce the sequence by clicking on the boxes in the same order. Sequences of increasing length are presented until participants fail to reproduce a sequence correctly which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ spatial_stm_percentile }}{{ 'st' if spatial_stm_percentile == 1 else ('nd' if spatial_stm_percentile == 2 else ('rd' if spatial_stm_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if verbal_stm_percentile %}
-    <p><strong>Verbal short-term memory (Digit Span):</strong> A test of verbal short-term memory. Patient falls in the {{ verbal_stm_percentile }}th Percentile.</p>
+    <p><strong>4. Verbal short-term memory.</strong> Digit Span Task. Participants must reproduce sequences of spoken digits by clicking on a number pad. Sequences begin at one digit and increase by one digit each time. The task ends after three errors. The outcome measure is the maximum level achieved, scored as the maximum number of digits that can successfully be reproduced which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ verbal_stm_percentile }}{{ 'st' if verbal_stm_percentile == 1 else ('nd' if verbal_stm_percentile == 2 else ('rd' if verbal_stm_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if episodic_memory_percentile %}
-    <p><strong>Episodic memory (Paired Associates):</strong> A test of episodic memory function. Patient falls in the {{ episodic_memory_percentile }}th Percentile.</p>
+    <p><strong>5. Episodic memory.</strong> Paired Associates Task. Participants view a set of objects appear at different locations in a box. Then, each object appears in the middle of the screen and participants must click on the location where it originally appeared. The number of objects is increased each time until participants respond incorrectly twice. The outcome measure is the maximum level achieved scored as the maximum number of objects that can be successfully remembered which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ episodic_memory_percentile }}{{ 'st' if episodic_memory_percentile == 1 else ('nd' if episodic_memory_percentile == 2 else ('rd' if episodic_memory_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if polygons_percentile %}
-    <p><strong>Visuospatial Processing (Polygons):</strong> A test of visuospatial processing ability. Patient falls in the {{ polygons_percentile }}th Percentile.</p>
+    <p><strong>6. Visuospatial Processing.</strong> Polygon Task. Participants identify which shape they have seen more of. Shapes increase in complexity throughout the task, ranging from simple shapes to complex, unfamiliar polygons. Outcome measures include percentage correct and a sensitivity score. It is a measure of visuospatial processing, involving the ability to recognize the shapes of seen objects which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ polygons_percentile }}{{ 'st' if polygons_percentile == 1 else ('nd' if polygons_percentile == 2 else ('rd' if polygons_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if mental_rotation_percentile %}
-    <p><strong>Mental Rotation (Rotations):</strong> A test of mental rotation ability. Patient falls in the {{ mental_rotation_percentile }}th Percentile.</p>
+    <p><strong>7. Mental rotation.</strong> Rotation Task. Participants are presented with two grids where some of the cells are filled in. In one configuration, the grid has been rotated. Participants must mentally rotate the grids to determine whether or not they are the same. The outcome measure is the number of solved problems where only unique patterns/rotation combinations are counted. It is a measure of mental rotation, the ability to imagine objects in different orientations which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ mental_rotation_percentile }}{{ 'st' if mental_rotation_percentile == 1 else ('nd' if mental_rotation_percentile == 2 else ('rd' if mental_rotation_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if deductive_reasoning_percentile %}
-    <p><strong>Deductive Reasoning:</strong> A test of deductive reasoning ability. Patient falls in the {{ deductive_reasoning_percentile }}th Percentile.</p>
+    <p><strong>8. Deductive reasoning.</strong> Deductive Reasoning Task. Participants view a target shape and must determine which of the shapes in the bottom half of the screen matches the target shape. The possible shapes are based on three features and three feature dimensions which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ deductive_reasoning_percentile }}{{ 'st' if deductive_reasoning_percentile == 1 else ('nd' if deductive_reasoning_percentile == 2 else ('rd' if deductive_reasoning_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if verbal_reasoning_percentile %}
-    <p><strong>Verbal Reasoning (Grammatical Reasoning):</strong> A test of verbal reasoning ability. Patient falls in the {{ verbal_reasoning_percentile }}th Percentile.</p>
+    <p><strong>9. Verbal reasoning.</strong> Grammatical Reasoning Task. Participants are presented with a statement and a picture of coloured shapes. Participants must indicate whether the statement matches the image. There are 30 statements per trial but the outcome measure used here is scored as the number of correct responses minus the number of incorrect responses. It is a measure of verbal reasoning, the ability to understand and evaluate written statements based on logic which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ verbal_reasoning_percentile }}{{ 'st' if verbal_reasoning_percentile == 1 else ('nd' if verbal_reasoning_percentile == 2 else ('rd' if verbal_reasoning_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if attention_percentile %}
-    <p><strong>Attention (Feature Match):</strong> A test of focused attention. Patient falls in the {{ attention_percentile }}th Percentile.</p>
+    <p><strong>10. Attention.</strong> Feature Match Task. Participants view a pair of complex images and must identify if they are identical or different. Each image has a unique pattern and multiple unique shapes with different colours. Outcome measures are based on the number of correct responses. It is a measure of concentration and attention, the ability to concentrate on an object or task which {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ attention_percentile }}{{ 'st' if attention_percentile == 1 else ('nd' if attention_percentile == 2 else ('rd' if attention_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if planning_percentile %}
-    <p><strong>Planning (Spatial Planning):</strong> A test of planning and problem-solving ability. Patient falls in the {{ planning_percentile }}th Percentile.</p>
+    <p><strong>11. Planning.</strong> Spatial Planning Task. Participants must manipulate numbered beads on a series of sticks to put the beads in ascending order. The lowest numbered bead must end up on a stack to the left of higher numbered beads. The goal is to solve the puzzle in the minimum number of moves. It is a measure of executive function, the ability to plan and execute complex tasks. {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ planning_percentile }}{{ 'st' if planning_percentile == 1 else ('nd' if planning_percentile == 2 else ('rd' if planning_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
     {% if response_inhibition_percentile %}
-    <p><strong>Response Inhibition (Double Trouble):</strong> A test of response inhibition and executive control. Patient falls in the {{ response_inhibition_percentile }}th Percentile.</p>
-    {% endif %}
+    <p><strong>12. Response Inhibition.</strong> Double Trouble Task. Participants view a word printed in coloured ink and must choose the word that represents the colour. There are three words to choose from at the bottom of the screen, and the colour of these words makes choosing the word (vs. the colour it is printed in) difficult due to the Stroop effect. Outcome measures are based on the number of correct responses. It is a measure of response inhibition, the ability to concentrate on the needed information and inhibit automatic responses that can interfere with correct responding. {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ response_inhibition_percentile }}{{ 'st' if response_inhibition_percentile == 1 else ('nd' if response_inhibition_percentile == 2 else ('rd' if response_inhibition_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
   </div>
   {% endif %}
-
 </body>
 </html>
