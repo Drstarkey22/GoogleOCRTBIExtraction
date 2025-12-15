@@ -192,46 +192,105 @@ def interpret_psy_score(score: int, scale: str) -> str:
             return "Severe anxiety \U0001F6A9"
     return ""
 
-def render_report(fields: Dict, patient_name: str, dob: str, doi: str, dos: str, vng: bool, ct_sib: bool, creyos: bool) -> str:
+def render_report(fields: Dict, patient_name: str, dob: str, doi: str, dos: str, vng: bool, ct_sib: bool, creyos: bool, sex: str = "") -> str:
     """Render the final interpretation report using a Jinja2 template."""
+    import re
+    
+    def _parse_percentile(val) -> int:
+        """Parse a percentile value, stripping %, ordinal suffixes, and extracting just the number."""
+        if val is None:
+            return 0
+        s = str(val).replace("%", "").replace("nd", "").replace("rd", "").replace("th", "").replace("st", "").strip()
+        match = re.search(r'\d+', s)
+        return int(match.group()) if match else 0
+    
+    def _parse_int(val, default=0) -> int:
+        """Parse an integer value safely."""
+        if val is None:
+            return default
+        s = str(val).strip()
+        match = re.search(r'\d+', s)
+        return int(match.group()) if match else default
+    
+    def _task_interpretation(pct: int) -> str:
+        """Interpret cognitive task percentile."""
+        return "Below Average" if pct < 20 else "Within Typical Range"
+    
     # Compute age from date of birth
     age = ""
     try:
         age = (datetime.now().date() - datetime.strptime(dob, "%m/%d/%Y").date()).days // 365
     except Exception:
         age = ""
-    # Prepare interpretation values
-    pursuits_score = int(fields.get("pursuits_score", 0) or 0)
-    saccades_score = int(fields.get("saccades_score", 0) or 0)
-    raw_fx = (fields.get("fixations_score") or fields.get("Fixations score") or "").strip()
-    fixations_score = int(raw_fx) if raw_fx.isdigit() else None
-    raw_ds = (fields.get("dysfunctional_scale") or fields.get("Dysfunctional scale") or fields.get("eyeq_score") or "").strip()
-    dysfunctional_scale = int(raw_ds) if raw_ds.isdigit() else None
-    def _parse_percentile(val) -> int:
-        """Parse a percentile value, stripping %, ordinal suffixes, and extracting just the number."""
-        import re
-        if val is None:
-            return 0
-        s = str(val).replace("%", "").replace("nd", "").replace("rd", "").replace("th", "").replace("st", "").strip()
-        # Extract first number from string
-        match = re.search(r'\d+', s)
-        return int(match.group()) if match else 0
+    
+    # Oculomotor scores
+    pursuits_score = _parse_int(fields.get("pursuits_score") or fields.get("pursuits score"))
+    saccades_score = _parse_int(fields.get("saccades_score") or fields.get("Saccades Score"))
+    raw_fx = str(fields.get("fixations_score") or fields.get("Fixations score") or "").strip()
+    fixations_score = _parse_int(raw_fx) if raw_fx else None
+    raw_ds = str(fields.get("dysfunctional_scale") or fields.get("Dysfunctional scale") or fields.get("eyeq_score") or "").strip()
+    dysfunctional_scale = _parse_int(raw_ds) if raw_ds else None
 
+    # Posturography percentiles
     standard_score = _parse_percentile(fields.get("standard_score_percentile"))
     proprio_score = _parse_percentile(fields.get("proprioception_score_percentile"))
     visual_score = _parse_percentile(fields.get("visual_score_percentile"))
     vestibular_score = _parse_percentile(fields.get("vestibular_score_percentile"))
+    
     # Neuropsychiatric scores
-    rpq_score = int(fields.get("rpq_score", 0) or 0)
-    pcl_5_score = int(fields.get("pcl_5_score", 0) or 0)
-    psqi_score = int(fields.get("psqi_score", 0) or 0)
-    phq_9_score = int(fields.get("phq_9_score", 0) or 0)
-    gad_7_score = int(fields.get("gad_7_score", 0) or 0)
+    rpq_score = _parse_int(fields.get("rpq_score") or fields.get("rpq score"))
+    pcl_5_score = _parse_int(fields.get("pcl_5_score") or fields.get("pcl-5 score"))
+    psqi_score = _parse_int(fields.get("psqi_score") or fields.get("psqi score"))
+    phq_9_score = _parse_int(fields.get("phq_9_score") or fields.get("phq-9 score"))
+    gad_7_score = _parse_int(fields.get("gad_7_score") or fields.get("gad-7 score"))
+    
+    # Cognitive test percentiles
+    visuospatial_wm = _parse_percentile(fields.get("visuospatial_working_memory_percentile") or fields.get("Visuospatial working memory test"))
+    working_memory = _parse_percentile(fields.get("working_memory_percentile") or fields.get("Working memory test"))
+    spatial_stm = _parse_percentile(fields.get("spatial_short_term_memory_percentile") or fields.get("Spatial short-term memory test"))
+    verbal_stm = _parse_percentile(fields.get("verbal_short_term_memory_percentile") or fields.get("Verbal short-term memory"))
+    episodic_memory = _parse_percentile(fields.get("episodic_memory_percentile") or fields.get("Episodic memory"))
+    polygons = _parse_percentile(fields.get("polygons_percentile") or fields.get("Polygons"))
+    mental_rotation = _parse_percentile(fields.get("mental_rotation_percentile") or fields.get("Mental Rotation"))
+    deductive_reasoning = _parse_percentile(fields.get("deductive_reasoning_percentile") or fields.get("Deductive Reasoning"))
+    verbal_reasoning = _parse_percentile(fields.get("verbal_reasoning_percentile") or fields.get("Verbal Reasoning"))
+    attention = _parse_percentile(fields.get("attention_percentile") or fields.get("Attention"))
+    planning = _parse_percentile(fields.get("planning_percentile") or fields.get("Planning"))
+    response_inhibition = _parse_percentile(fields.get("response_inhibition_percentile") or fields.get("Response Inhibition"))
+    
+    # Check if we have cognitive domain data
+    memory_tasks = [visuospatial_wm, working_memory, spatial_stm, verbal_stm, episodic_memory]
+    visuospatial_tasks = [polygons, mental_rotation]
+    reasoning_tasks = [deductive_reasoning, verbal_reasoning]
+    attention_tasks = [attention]
+    executive_tasks = [planning, response_inhibition]
+    
+    # Filter out zero/missing values for determining presence
+    has_cognitive = any(t > 0 for t in memory_tasks + visuospatial_tasks + reasoning_tasks + attention_tasks + executive_tasks)
+    
+    # Domain interpretations - only count actual values (> 0) when determining impairment
+    def domain_impaired(tasks, threshold=20, min_count=2):
+        """Check if domain is impaired based on actual (non-zero) task values."""
+        actual_tasks = [t for t in tasks if t > 0]
+        if len(actual_tasks) < min_count:
+            return False  # Not enough data to determine impairment
+        below = sum(1 for t in actual_tasks if t < threshold)
+        return below >= min_count
+    
+    memory_impaired = domain_impaired(memory_tasks, min_count=2)
+    visuospatial_impaired = domain_impaired(visuospatial_tasks, min_count=2)
+    reasoning_impaired = domain_impaired(reasoning_tasks, min_count=2)
+    # For single-task domains, impaired if the task exists and is below threshold
+    attention_impaired = any(t > 0 and t < 20 for t in attention_tasks)
+    executive_impaired = domain_impaired(executive_tasks, min_count=2)
+    
     # Load template (HTML)
     with open(TEMPLATE_PATH) as tf:
         template = Template(tf.read())
+    
     return template.render(
         patient_full_name=patient_name,
+        sex=sex,
         dob=dob,
         doi=doi,
         dos=dos,
@@ -265,6 +324,36 @@ def render_report(fields: Dict, patient_name: str, dob: str, doi: str, dos: str,
         psqi_interpretation=interpret_psy_score(psqi_score, "psqi"),
         phq_9_interpretation=interpret_psy_score(phq_9_score, "phq"),
         gad_7_interpretation=interpret_psy_score(gad_7_score, "gad"),
+        cognitive_domains=has_cognitive,
+        visuospatial_wm_percentile=visuospatial_wm if visuospatial_wm > 0 else None,
+        visuospatial_wm_interpretation=_task_interpretation(visuospatial_wm),
+        working_memory_percentile=working_memory if working_memory > 0 else None,
+        working_memory_interpretation=_task_interpretation(working_memory),
+        spatial_stm_percentile=spatial_stm if spatial_stm > 0 else None,
+        spatial_stm_interpretation=_task_interpretation(spatial_stm),
+        verbal_stm_percentile=verbal_stm if verbal_stm > 0 else None,
+        verbal_stm_interpretation=_task_interpretation(verbal_stm),
+        episodic_memory_percentile=episodic_memory if episodic_memory > 0 else None,
+        episodic_memory_interpretation=_task_interpretation(episodic_memory),
+        polygons_percentile=polygons if polygons > 0 else None,
+        polygons_interpretation=_task_interpretation(polygons),
+        mental_rotation_percentile=mental_rotation if mental_rotation > 0 else None,
+        mental_rotation_interpretation=_task_interpretation(mental_rotation),
+        deductive_reasoning_percentile=deductive_reasoning if deductive_reasoning > 0 else None,
+        deductive_reasoning_interpretation=_task_interpretation(deductive_reasoning),
+        verbal_reasoning_percentile=verbal_reasoning if verbal_reasoning > 0 else None,
+        verbal_reasoning_interpretation=_task_interpretation(verbal_reasoning),
+        attention_percentile=attention if attention > 0 else None,
+        attention_interpretation=_task_interpretation(attention),
+        planning_percentile=planning if planning > 0 else None,
+        planning_interpretation=_task_interpretation(planning),
+        response_inhibition_percentile=response_inhibition if response_inhibition > 0 else None,
+        response_inhibition_interpretation=_task_interpretation(response_inhibition),
+        memory_domain_interpretation="Impaired \U0001F6A9" if memory_impaired else "Not Impaired",
+        visuospatial_domain_interpretation="Impaired \U0001F6A9" if visuospatial_impaired else "Not Impaired",
+        reasoning_domain_interpretation="Impaired \U0001F6A9" if reasoning_impaired else "Not Impaired",
+        attention_domain_interpretation="Impaired \U0001F6A9" if attention_impaired else "Not Impaired",
+        executive_domain_interpretation="Impaired \U0001F6A9" if executive_impaired else "Not Impaired",
     )
 
 def html_to_pdf(html_content: str) -> bytes:
@@ -448,6 +537,37 @@ def upload_endpoint() -> tuple:
             "dateofinjury": "doi",
             "dateoftesting": "dos",
             "assessmentdate": "dos",
+            "sex": "sex",
+            "gender": "sex",
+            
+            # Creyos cognitive tests
+            "visuospatialworkingmemorytest": "Visuospatial working memory test",
+            "visuospatialworkingmemory": "Visuospatial working memory test",
+            "monkeyladder": "Visuospatial working memory test",
+            "numberladder": "Visuospatial working memory test",
+            "workingmemorytest": "Working memory test",
+            "workingmemory": "Working memory test",
+            "tokensearch": "Working memory test",
+            "spatialshorttermmemorytest": "Spatial short-term memory test",
+            "spatialshorttermmemory": "Spatial short-term memory test",
+            "spatialspan": "Spatial short-term memory test",
+            "verbalshorttermmemory": "Verbal short-term memory",
+            "digitspan": "Verbal short-term memory",
+            "episodicmemory": "Episodic memory",
+            "pairedassociates": "Episodic memory",
+            "polygons": "Polygons",
+            "visuospatialprocessing": "Polygons",
+            "mentalrotation": "Mental Rotation",
+            "rotations": "Mental Rotation",
+            "deductivereasoning": "Deductive Reasoning",
+            "verbalreasoning": "Verbal Reasoning",
+            "grammaticalreasoning": "Verbal Reasoning",
+            "attention": "Attention",
+            "featurematch": "Attention",
+            "planning": "Planning",
+            "spatialplanning": "Planning",
+            "responseinhibition": "Response Inhibition",
+            "doubletrouble": "Response Inhibition",
         }
 
         norm_in = {_norm(k): v for k, v in incoming.items() if v not in (None, "")}
@@ -480,11 +600,12 @@ def upload_endpoint() -> tuple:
     dob = request.form.get("dob") or merged_fields.get("dob") or ""
     doi = request.form.get("doi") or merged_fields.get("doi") or ""
     dos = request.form.get("dos") or merged_fields.get("dos") or ""
+    sex = request.form.get("sex") or merged_fields.get("sex") or ""
 
     # Auto-detect which tests are present
     vng = any(k in merged_fields for k in ("pursuits score", "Saccades Score", "Fixations score"))
     ct_sib = any(k in merged_fields for k in ("standard_score_percentile", "proprioception_score_percentile", "visual_score_percentile", "vestibular_score_percentile", "standard_path_length", "proprioception_path_length", "visual_path_length", "vestibular_path_length"))
-    creyos = any(k in merged_fields for k in ("rpq score", "pcl-5 score", "psqi score", "phq-9 score", "gad-7 score")) or any(k in merged_fields for k in ("attention_percentile","deductive_reasoning_percentile","episodic_memory_percentile","mental_rotation_percentile","planning_percentile","polygons_percentile","response_inhibition_percentile","spatial_short_term_memory_percentile","verbal_reasoning_percentile","verbal_short_term_memory_percentile","visuospatial_working_memory_percentile","working_memory_percentile"))
+    creyos = any(k in merged_fields for k in ("rpq score", "pcl-5 score", "psqi score", "phq-9 score", "gad-7 score")) or any(k in merged_fields for k in ("attention_percentile","deductive_reasoning_percentile","episodic_memory_percentile","mental_rotation_percentile","planning_percentile","polygons_percentile","response_inhibition_percentile","spatial_short_term_memory_percentile","verbal_reasoning_percentile","verbal_short_term_memory_percentile","visuospatial_working_memory_percentile","working_memory_percentile","Visuospatial working memory test","Working memory test","Spatial short-term memory test","Verbal short-term memory","Episodic memory","Polygons","Mental Rotation","Deductive Reasoning","Verbal Reasoning","Attention","Planning","Response Inhibition"))
 
     # Render ONE final report
     html_report = render_report(
@@ -496,6 +617,7 @@ def upload_endpoint() -> tuple:
         vng=vng,
         ct_sib=ct_sib,
         creyos=creyos,
+        sex=sex,
     )
 
     # Convert HTML to PDF and upload
