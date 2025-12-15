@@ -46,3 +46,28 @@ The report should display PERCENTILE values, not path lengths. The backend code 
 - Percentile fields → `standard_score_percentile`, `proprioception_score_percentile`, etc.
 
 If the Document AI Custom Extractor returns incorrect field names, update the alias mapping in `main.py` within the `_merge_fields` function.
+
+## Cognitive Domain Mapping (Creyos)
+The report includes cognitive domain assessments with the following structure:
+- **Memory**: Visuospatial Working Memory, Working Memory, Spatial STM, Verbal STM, Episodic Memory
+- **Visuospatial**: Polygons, Mental Rotation
+- **Reasoning**: Deductive Reasoning, Verbal Reasoning
+- **Attention**: Feature Match (single task)
+- **Executive Function**: Planning, Response Inhibition
+
+Domain impairment logic:
+- Requires at least 2 actual (non-zero) test results to determine impairment
+- Impairment flagged when 2+ subtests fall below 20th percentile
+- Missing/zero values are excluded from calculations
+- Attention domain (single task) uses separate logic
+
+## Template Rendering Notes
+- Cognitive task table uses flat structure (domain repeated per row) to avoid rowspan issues
+- Percentile values only render when > 0 (otherwise N/A or omitted)
+- Ordinal suffixes (1st, 2nd, 3rd, 4th) applied correctly to valid percentiles
+
+## Recent Changes (Dec 2025)
+- Fixed cognitive domain table structure to avoid hard-coded rowspans
+- Fixed zero-value percentile display (now shows N/A or omits row)
+- Updated domain impairment logic to only count actual test results
+- Added conditional rendering for posturography findings
