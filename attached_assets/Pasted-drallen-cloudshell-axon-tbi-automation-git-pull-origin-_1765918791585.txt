@@ -1,0 +1,23 @@
+drallen@cloudshell:~ (axon-tbi-automation)$ git pull origin main
+gcloud run deploy tbi-backend --source . --region us-central1 --allow-unauthenticated
+From https://github.com/Drstarkey22/GoogleOCRTBIExtraction
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+Building using Dockerfile and deploying container to Cloud Run service [tbi-backend] in project [axon-tbi-automation] region [us-central1]
+Building and deploying...                                                                                                                                                                                                                      
+  Validating Service...done                                                                                                                                                                                                                    
+  Uploading sources...done                                                                                                                                                                                                                     
+  Building Container... Logs are available at [https://console.cloud.google.com/cloud-build/builds;region=us-central1/f98a3315-3a56-4d15-ba5e-2aa0428b8693?project=447216852170]....done                                                       
+  Setting IAM Policy...done                                                                                                                                                                                                                    
+  Creating Revision...done                                                                                                                                                                                                                     
+  Routing traffic...done                                                                                                                                                                                                                       
+Done.                                                                                                                                                                                                                                          
+Service [tbi-backend] revision [tbi-backend-00100-n92] has been deployed and is serving 100 percent of traffic.
+Service URL: https://tbi-backend-447216852170.us-central1.run.app
+drallen@cloudshell:~ (axon-tbi-automation)$ curl -X DELETE https://tbi-backend-447216852170.us-central1.run.app/clear-all-reports
+<!doctype html>
+<html lang=en>
+<title>404 Not Found</title>
+<h1>Not Found</h1>
+<p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>
+drallen@cloudshell:~ (axon-tbi-automation)$ 
