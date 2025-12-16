@@ -5,8 +5,8 @@ const fileInput = document.getElementById('file-input');
 const fileList = document.getElementById('file-list');
 const resultDiv = document.getElementById('result');
 
-// Replace this with your deployed Cloud Run service URL, e.g. https://tbi-backend-abcdef-uc.a.run.app/upload
-const BACKEND_UPLOAD_URL = 'https://tbi-backend-447216852170.us-central1.run.app/upload';
+// Use local backend running in Replit (same origin)
+const BACKEND_UPLOAD_URL = '/upload';
 
 dropZone.addEventListener('click', () => fileInput.click());
 

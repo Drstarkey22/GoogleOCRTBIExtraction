@@ -29,8 +29,12 @@ from datetime import datetime
 from google.protobuf.json_format import MessageToDict  # type: ignore
 import json
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='front_end', static_url_path='')
 CORS(app)
+
+@app.route('/')
+def serve_frontend():
+    return app.send_static_file('index.html')
 
 PROJECT_ID = os.getenv("PROJECT_ID")
 OCR_LOCATION = os.getenv("OCR_LOCATION", os.getenv("LOCATION", "us"))
@@ -657,7 +661,8 @@ def upload_endpoint() -> tuple:
 
 if __name__ == "__main__":
     # For local testing; in Cloud Run Gunicorn will handle serving the app
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
+    # Use port 5000 for Replit webview
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
 
 CREYOS_DOMAIN_RULES = {
     "memory": [

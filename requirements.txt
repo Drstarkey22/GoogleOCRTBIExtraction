@@ -7,3 +7,11 @@ Jinja2>=3.0
 gunicorn
 flask-cors
 pdfkit
+flask
+flask-cors
+google-cloud-documentai
+google-cloud-firestore
+google-cloud-storage
+gunicorn
+jinja2
+sift-stack-py
