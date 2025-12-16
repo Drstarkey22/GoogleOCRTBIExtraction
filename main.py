@@ -405,6 +405,11 @@ def render_report(fields: Dict, patient_name: str, dob: str, doi: str, dos: str,
         reasoning_domain_interpretation="Impaired \U0001F6A9" if reasoning_impaired else "Not Impaired",
         attention_domain_interpretation="Impaired \U0001F6A9" if attention_impaired else "Not Impaired",
         executive_domain_interpretation="Impaired \U0001F6A9" if executive_impaired else "Not Impaired",
+        memory_impaired=memory_impaired,
+        visuospatial_impaired=visuospatial_impaired,
+        reasoning_impaired=reasoning_impaired,
+        attention_impaired=attention_impaired,
+        executive_impaired=executive_impaired,
     )
 
 def html_to_pdf(html_content: str) -> bytes:

@@ -286,6 +286,54 @@
     {% if response_inhibition_percentile %}
     <p><strong>12. Response Inhibition.</strong> Double Trouble Task. Participants view a word printed in coloured ink and must choose the word that represents the colour. There are three words to choose from at the bottom of the screen, and the colour of these words makes choosing the word (vs. the colour it is printed in) difficult due to the Stroop effect. Outcome measures are based on the number of correct responses. It is a measure of response inhibition, the ability to concentrate on the needed information and inhibit automatic responses that can interfere with correct responding. {% if patient_full_name %}{{ patient_full_name }}{% else %}Patient{% endif %} falls in the {{ response_inhibition_percentile }}{{ 'st' if response_inhibition_percentile == 1 else ('nd' if response_inhibition_percentile == 2 else ('rd' if response_inhibition_percentile == 3 else 'th')) }} Percentile.</p>
     {% endif %}
+
+    <h3>Impression:</h3>
+    <p>
+    {% set impaired_domains = [] %}
+    {% if memory_impaired %}{% set _ = impaired_domains.append('memory') %}{% endif %}
+    {% if visuospatial_impaired %}{% set _ = impaired_domains.append('visuospatial processing') %}{% endif %}
+    {% if reasoning_impaired %}{% set _ = impaired_domains.append('reasoning') %}{% endif %}
+    {% if attention_impaired %}{% set _ = impaired_domains.append('attention') %}{% endif %}
+    {% if executive_impaired %}{% set _ = impaired_domains.append('executive function') %}{% endif %}
+    {% if impaired_domains|length > 0 %}
+    Neurocognitive testing reveals impairment in {{ impaired_domains|join(', ') }}. While these findings can be indicative of a variety of pathologies, it is within a reasonable degree of medical probability that these deficits are a result of a traumatic brain injury sustained{% if doi %} on {{ doi }}{% endif %}.
+    {% else %}
+    Neurocognitive testing results are within functional limits across all domains assessed.
+    {% endif %}
+    </p>
+    {% if rpq_score and rpq_score >= 16 %}
+    <p>The RPQ score of {{ rpq_score }}/64 is indicative of post-concussion syndrome symptoms.</p>
+    {% endif %}
+    {% if pcl_5_score and pcl_5_score >= 31 %}
+    <p>The PCL-5 score of {{ pcl_5_score }}/80 suggests probable PTSD requiring further evaluation.</p>
+    {% endif %}
+    {% if psqi_score and psqi_score > 5 %}
+    <p>The PSQI score of {{ psqi_score }}/21 indicates poor sleep quality.</p>
+    {% endif %}
+    {% if phq_9_score and phq_9_score >= 10 %}
+    <p>The PHQ-9 score of {{ phq_9_score }}/27 indicates moderate to severe depressive symptoms requiring clinical attention.</p>
+    {% endif %}
+    {% if gad_7_score and gad_7_score >= 10 %}
+    <p>The GAD-7 score of {{ gad_7_score }}/21 indicates moderate to severe anxiety symptoms requiring clinical attention.</p>
+    {% endif %}
+
+    <h3>Recommendations:</h3>
+    <ol>
+      <li>Correlate with clinical status, neurological exam, and neuroimaging studies as clinically warranted.</li>
+      {% if impaired_domains|length > 0 %}
+      <li>Consider referral to neuropsychology for comprehensive evaluation and cognitive rehabilitation.</li>
+      {% endif %}
+      {% if pcl_5_score and pcl_5_score >= 31 %}
+      <li>Consider referral to mental health specialist for PTSD evaluation and treatment.</li>
+      {% endif %}
+      {% if phq_9_score and phq_9_score >= 10 or gad_7_score and gad_7_score >= 10 %}
+      <li>Consider referral to mental health specialist for evaluation and treatment of mood/anxiety symptoms.</li>
+      {% endif %}
+      {% if psqi_score and psqi_score > 5 %}
+      <li>Consider sleep hygiene education and evaluation for sleep disorders.</li>
+      {% endif %}
+      <li>May consider repeat neurocognitive testing to evaluate improvement with treatment.</li>
+    </ol>
   </div>
   {% endif %}
 </body>

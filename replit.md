@@ -72,6 +72,7 @@ Domain impairment logic:
 - Updated domain impairment logic to only count actual test results
 - Added conditional rendering for posturography findings
 - **Added PDF chunking for large documents**: Documents over 15 pages are automatically split into chunks, processed separately through Document AI, and results are merged. This fixes the PAGE_LIMIT_EXCEEDED error for large Creyos reports.
+- **Added Impression and Recommendations sections for Creyos reports**: The template now includes complete clinical Impression and Recommendations based on impaired cognitive domains and neuropsychiatric scores.
 
 ## PDF Chunking (Large Document Handling)
 The Document AI Custom Extractor has a 15-page limit per request. For documents exceeding this limit:
