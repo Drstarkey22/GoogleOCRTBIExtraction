@@ -142,17 +142,17 @@
     <h3>Findings:</h3>
     <p><strong>Pursuits score:</strong> Smooth pursuit is the ability to maintain a gaze on an object. The test examines the error in keeping a gaze on the target and provides metrics related to movement of eye in relation to an object. The test is performed with gaze fixation on a target and provides a report on Circular Smooth Pursuit, Horizontal Smooth Pursuit and Vertical Smooth Pursuit. Patient Score: {{ pursuits_score }} which indicates {{ pursuits_interpretation }}.</p>
     <p><strong>Saccades score:</strong> Saccades are fast eye movement mechanisms that allow a gaze shift from one target to the next. Saccades represent the spatial accuracy of targeting and retinotopic maps. The test provides metrics related to quick movement of the eye to relocate foveal vision. Patient Score: {{ saccades_score }} which indicates {{ saccades_interpretation }}.</p>
-    <p><strong>Fixations score:</strong> This provides metrics related to the stopping point or the ability to maintain fixation of the eye on a target. Patient Score: {{ fixations_score }} which indicates {{ fixations_interpretation }}.</p>
-    <p><strong>Dysfunctional scale (EyeQ):</strong> This is a metric that describes where the patient falls in relation to age matched normative population data. Patient Score: {{ dysfunctional_scale }} which indicates {{ dysfunctional_interpretation }}.</p>
+    <p><strong>Fixations score:</strong> This provides metrics related to the stopping point or the ability to maintain fixation of the eye on a target. Patient Score: {{ fixations_score if fixations_score is not none else 'N/A' }} which indicates {{ fixations_interpretation }}.</p>
+    <p><strong>Dysfunctional scale (EyeQ):</strong> This is a metric that describes where the patient falls in relation to age matched normative population data. Patient Score: {{ dysfunctional_scale if dysfunctional_scale is not none else 'N/A' }} which indicates {{ dysfunctional_interpretation }}.</p>
 
     <h3>Interpretation:</h3>
-    {% if pursuits_score <= 74 %}
+    {% if pursuits_score is number and pursuits_score <= 74 %}
     <p>Smooth pursuits are below the normal functional range. This is indicative of dysfunction at the cerebellum and parietal areas.</p>
     {% endif %}
-    {% if saccades_score <= 74 %}
+    {% if saccades_score is number and saccades_score <= 74 %}
     <p>Saccadic movements are below the normal functional range. This is indicative of dysfunction at the cerebellum, brainstem, and frontal lobe.</p>
     {% endif %}
-    {% if fixations_score and fixations_score <= 74 %}
+    {% if fixations_score is number and fixations_score <= 74 %}
     <p>Fixations are below the normal functional range. This is indicative of dysfunction in the neural integrator and brainstem.</p>
     {% endif %}
     <p>Dysfunctional Scale is {{ dysfunctional_scale }}.</p>
