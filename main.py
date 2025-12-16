@@ -495,19 +495,12 @@ def extract_fields_generative(gcs_uri: str) -> Dict:
 
     # Multiple chunks - process each and merge results
     merged: Dict = {}
-    temp_uris: List[str] = []
-
-    try:
-        for i, chunk_bytes in enumerate(chunks):
-            chunk_result = _process_single_chunk(chunk_bytes)
-            # Merge results - first non-empty value wins for each key
-            for k, v in chunk_result.items():
-                if k not in merged and v:
-                    merged[k] = v
-    finally:
-        # Clean up any temporary chunk files
-        for uri in temp_uris:
-            delete_blob(uri)
+    for chunk_bytes in chunks:
+        chunk_result = _process_single_chunk(chunk_bytes)
+        # Merge results - first non-empty value wins for each key
+        for k, v in chunk_result.items():
+            if k not in merged and v:
+                merged[k] = v
 
     return merged
 
