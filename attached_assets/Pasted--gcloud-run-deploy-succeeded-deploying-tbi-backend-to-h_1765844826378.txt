@@ -1,0 +1,107 @@
+✦ gcloud run deploy succeeded, deploying tbi-backend to https://tbi-backend-447216852170.us-central1.run.app. Now I must instruct the user to
+  configure crucial environment variables (PROJECT_ID, PROCESSOR_ID, PROCESSOR_LOCATION, BUCKET_NAME, GEN_EXTRACTOR_ID) using gcloud run services
+  update for the Cloud Run service to function properly.Your tbi-backend service has been successfully deployed to Google Cloud Run!
+
+  Service URL: https://tbi-backend-447216852170.us-central1.run.app
+
+  Important: For your backend to function correctly, you need to set the following environment
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteTodos Set 4 todo(s)                                                                                                                       │
+│                                                                                                                                                   │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ Your tbi-backend service has been successfully deployed to Google Cloud Run!
+
+  Service URL: https://tbi-backend-447216852170.us-central1.run.app
+
+  Important: For your backend to function correctly, you need to set the following environment variables on the deployed Cloud Run service:
+
+   * PROJECT_ID: Your Google Cloud project ID.
+   * PROCESSOR_ID: Your Document AI OCR processor ID.
+   * PROCESSOR_LOCATION: The region of your processor (e.g., us).
+   * BUCKET_NAME: The Cloud Storage bucket for uploads.
+   * GEN_EXTRACTOR_ID: Your Custom Extractor processor ID (optional).
+   * GOOGLE_APPLICATION_CREDENTIALS_JSON (path to the service account key file if not using default service account)
+
+  You can set these environment variables using the gcloud run services update command. For example:
+
+   1 gcloud run services update tbi-backend \
+   2   --region us-central1 \
+   3   --set-env-vars PROJECT_ID="YOUR_PROJECT_ID",PROCESSOR_ID="YOUR_PROCESSOR_ID",PROCESSOR_LOCATION="YOUR_PROCESSOR_LOCATION",BUCKET_NAME=
+     "YOUR_BUCKET_NAME",GEN_EXTRACTOR_ID="YOUR_GEN_EXTRACTOR_ID"
+
+  Please replace "YOUR_PROJECT_ID", "YOUR_PROCESSOR_ID", etc., with your actual values.
+
+  What would you like to do next?
+
+> gcloud run services describe tbi-backend --region=us-central1
+
+✦ User wants tbi-backend service details. I'll execute the gcloud command.
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell gcloud run services describe tbi-backend --region=us-central1 [current working directory /home/drallen] (Describe the 'tbi-backend' Clo… │
+│                                                                                                                                                   │
+│ ✔ Service tbi-backend in region us-central1                                                                                                       │
+│                                                                                                                                                   │
+│ URL:     https://tbi-backend-447216852170.us-central1.run.app                                                                                     │
+│ Ingress: all                                                                                                                                      │
+│ Traffic:                                                                                                                                          │
+│   100% LATEST (currently tbi-backend-00091-9w6)                                                                                                   │
+│                                                                                                                                                   │
+│ Scaling: Auto (Min: 0)                                                                                                                            │
+│                                                                                                                                                   │
+│ Last updated on 2025-12-16T00:25:48.927187Z by drallen@amctbi.com:                                                                                │
+│   Revision tbi-backend-00091-9w6                                                                                                                  │
+│   Container tbi-backend-1                                                                                                                         │
+│     Image:                                                                                                                                        │
+│ us-central1-docker.pkg.dev/axon-tbi-automation/cloud-run-source-deploy/tbi-backend@sha256:ae2eb594f1aa1f89edee906b36de420ae8eda84b1e11a7bb97d8f55 │
+│ a8a51e641                                                                                                                                         │
+│     Port:            8080                                                                                                                         │
+│     Memory:          2Gi                                                                                                                          │
+│     CPU:             2                                                                                                                            │
+│     Env vars:                                                                                                                                     │
+│       BUCKET_NAME    axon-tbi-automation_cloudbuild                                                                                               │
+│       EXTRACTOR_LOCATION us                                                                                                                       │
+│       EXTRACTOR_PROCESSOR_ID c49287fc469a8a39                                                                                                     │
+│       GEN_EXTRACTOR_ID c49287fc469a8a39                                                                                                           │
+│       GEN_EXTRACTOR_LOCATION us                                                                                                                   │
+│       OCR_LOCATION   us                                                                                                                           │
+│       PROJECT_ID     axon-tbi-automation                                                                                                          │
+│     Startup Probe:                                                                                                                                │
+│       TCP every 240s                                                                                                                              │
+│       Port:          8080                                                                                                                         │
+│       Initial delay: 0s                                                                                                                           │
+│       Timeout:       240s                                                                                                                         │
+│       Failure threshold: 1                                                                                                                        │
+│       Type:          Default                                                                                                                      │
+│   Service account:   447216852170-compute@developer.gserviceaccount.com                                                                           │
+│   Concurrency:       80                                                                                                                           │
+│   Max instances:     12                                                                                                                           │
+│   Timeout:           300s                                                                                                                         │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ gcloud run services describe shows tbi-backend deployment details, including some auto-set environment variables like BUCKET_NAME, PROJECT_ID, and
+  multiple PROCESSOR_LOCATION and PROCESSOR_ID variants. I need to verify with the user if these variables align with replit.md's specified
+  PROJECT_ID, PROCESSOR_ID, PROCESSOR_LOCATION, BUCKET_NAME, and GEN_EXTRACTOR_ID, and if any adjustments are needed.The tbi-backend service has been
+  deployed, and I can see the following environment variables are currently configured:
+
+   * BUCKET_NAME: axon-tbi-automation_cloudbuild
+   * EXTRACTOR_LOCATION: us
+   * `EXTRACTOR_
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteTodos Set 2 todo(s)                                                                                                                       │
+│                                                                                                                                                   │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ The tbi-backend service has been deployed, and I can see the following environment variables are currently configured:
+
+   * BUCKET_NAME: axon-tbi-automation_cloudbuild
+   * EXTRACTOR_LOCATION: us
+   * EXTRACTOR_PROCESSOR_ID: c49287fc469a8a39
+   * GEN_EXTRACTOR_ID: c49287fc469a8a39
+   * GEN_EXTRACTOR_LOCATION: us
+   * OCR_LOCATION: us
+   * PROJECT_ID: axon-tbi-automation
+
+  Please confirm if these values are correct for your application, specifically checking if:
+   * PROJECT_ID is correct.
+   * BUCKET_NAME is correct.
+   * Which of EXTRACTOR_LOCATION, GEN_EXTRACTOR_LOCATION, or OCR_LOCATION corresponds to your desired PROCESSOR_LOCATION.
+   * Which of EXTRACTOR_PROCESSOR_ID or GEN_EXTRACTOR_ID corresponds to your desired PROCESSOR_ID.
+   * GEN_EXTRACTOR_ID is correctly set (it's currently the same as EXTRACTOR_PROCESSOR_ID).
