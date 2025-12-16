@@ -511,6 +511,84 @@ def extract_fields_generative(gcs_uri: str) -> Dict:
 
 
 
+@app.route("/reports", methods=["OPTIONS"])
+def reports_options():
+    response = app.make_response("")
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
+@app.route("/reports", methods=["GET"])
+def get_reports():
+    """
+    Fetch patient reports from Firestore for the dashboard.
+    Returns a JSON array of patient records with key scores.
+    Supports optional limit parameter (default 500, max 1000).
+    """
+    db = get_firestore_client()
+    limit = min(int(request.args.get("limit", 500)), 1000)
+    reports_ref = db.collection("reports").order_by("created_utc", direction="DESCENDING").limit(limit)
+    docs = reports_ref.stream()
+    
+    def safe_int(val):
+        if val is None:
+            return None
+        try:
+            return int(float(str(val).replace("%", "").strip()))
+        except (ValueError, TypeError):
+            return None
+    
+    def get_score(merged, *keys):
+        for key in keys:
+            val = merged.get(key)
+            if val is not None:
+                result = safe_int(val)
+                if result is not None:
+                    return result
+        return None
+    
+    results = []
+    for doc in docs:
+        data = doc.to_dict()
+        merged = data.get("merged_fields", {})
+        tests = data.get("tests_detected", {})
+        
+        record = {
+            "id": doc.id,
+            "patient_name": data.get("patient_name", ""),
+            "dob": data.get("dob", ""),
+            "doi": data.get("doi", ""),
+            "dos": data.get("dos", ""),
+            "created_utc": data.get("created_utc", ""),
+            "report_pdf_uri": data.get("report_pdf_gcs_uri", ""),
+            "tests": {
+                "vng": tests.get("VNG", False),
+                "ctsib": tests.get("CTSIB", False),
+                "creyos": tests.get("Creyos", False),
+            },
+            "scores": {
+                "pursuits": get_score(merged, "pursuits score", "pursuits_score", "Pursuits Score"),
+                "saccades": get_score(merged, "Saccades Score", "saccades_score", "saccades score"),
+                "fixations": get_score(merged, "Fixations score", "fixations_score", "Fixations Score"),
+                "eyeq": get_score(merged, "Dysfunctional scale", "dysfunctional_scale", "EyeQ"),
+                "standard_percentile": get_score(merged, "standard_score_percentile", "Standard Percentile", "standard_percentile"),
+                "proprioception_percentile": get_score(merged, "proprioception_score_percentile", "Proprioception Percentile", "proprioception_percentile"),
+                "visual_percentile": get_score(merged, "visual_score_percentile", "Visual Percentile", "visual_percentile"),
+                "vestibular_percentile": get_score(merged, "vestibular_score_percentile", "Vestibular Percentile", "vestibular_percentile"),
+                "rpq": get_score(merged, "rpq_score", "RPQ Score", "rpq"),
+                "pcl5": get_score(merged, "pcl_5_score", "PCL-5 Score", "pcl5"),
+                "psqi": get_score(merged, "psqi_score", "PSQI Score", "psqi"),
+                "phq9": get_score(merged, "phq_9_score", "PHQ-9 Score", "phq9"),
+                "gad7": get_score(merged, "gad_7_score", "GAD-7 Score", "gad7"),
+            }
+        }
+        results.append(record)
+    
+    response = jsonify(results)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
 @app.route("/upload", methods=["OPTIONS"])
 def upload_options():
     response = app.make_response("")

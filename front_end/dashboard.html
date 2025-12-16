@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patient Data Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #0b66c3;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .controls input {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 250px;
+        }
+        .controls button {
+            padding: 8px 16px;
+            background-color: #0b66c3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .controls button:hover {
+            background-color: #094d99;
+        }
+        .table-container {
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            user-select: none;
+            position: sticky;
+            top: 0;
+        }
+        th:hover {
+            background-color: #e9ecef;
+        }
+        th.sorted-asc::after {
+            content: " ▲";
+        }
+        th.sorted-desc::after {
+            content: " ▼";
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .test-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+        .test-vng { background-color: #e3f2fd; color: #1565c0; }
+        .test-ctsib { background-color: #e8f5e9; color: #2e7d32; }
+        .test-creyos { background-color: #fff3e0; color: #e65100; }
+        .score-cell {
+            text-align: center;
+        }
+        .score-low {
+            color: #c62828;
+            font-weight: 600;
+        }
+        .score-mid {
+            color: #f57c00;
+        }
+        .score-normal {
+            color: #2e7d32;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #c62828;
+        }
+        .record-count {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="index.html">Upload Documents</a>
+        <a href="dashboard.html">Patient Dashboard</a>
+    </div>
+    
+    <h1>Patient Data Dashboard</h1>
+    <p class="record-count" id="record-count"></p>
+    
+    <div class="controls">
+        <input type="text" id="search" placeholder="Search by patient name..." />
+        <button id="export-btn">Export to CSV</button>
+        <button id="refresh-btn">Refresh Data</button>
+    </div>
+    
+    <div class="table-container">
+        <div id="loading" class="loading">Loading patient data...</div>
+        <div id="error" class="error" style="display:none"></div>
+        <table id="data-table" style="display:none">
+            <thead>
+                <tr>
+                    <th data-key="patient_name">Patient Name</th>
+                    <th data-key="dob">DOB</th>
+                    <th data-key="doi">DOI</th>
+                    <th data-key="tests">Tests</th>
+                    <th data-key="pursuits" class="score-cell">Pursuits</th>
+                    <th data-key="saccades" class="score-cell">Saccades</th>
+                    <th data-key="fixations" class="score-cell">Fixations</th>
+                    <th data-key="eyeq" class="score-cell">EyeQ</th>
+                    <th data-key="standard_percentile" class="score-cell">Std %</th>
+                    <th data-key="proprioception_percentile" class="score-cell">Prop %</th>
+                    <th data-key="visual_percentile" class="score-cell">Vis %</th>
+                    <th data-key="vestibular_percentile" class="score-cell">Vest %</th>
+                    <th data-key="rpq" class="score-cell">RPQ</th>
+                    <th data-key="pcl5" class="score-cell">PCL-5</th>
+                    <th data-key="psqi" class="score-cell">PSQI</th>
+                    <th data-key="phq9" class="score-cell">PHQ-9</th>
+                    <th data-key="gad7" class="score-cell">GAD-7</th>
+                    <th data-key="created_utc">Created</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+            </tbody>
+        </table>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

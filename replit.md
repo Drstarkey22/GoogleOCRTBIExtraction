@@ -74,6 +74,17 @@ Domain impairment logic:
 - **Added PDF chunking for large documents**: Documents over 15 pages are automatically split into chunks, processed separately through Document AI, and results are merged. This fixes the PAGE_LIMIT_EXCEEDED error for large Creyos reports.
 - **Added Impression and Recommendations sections for Creyos reports**: The template now includes complete clinical Impression and Recommendations based on impaired cognitive domains and neuropsychiatric scores.
 
+## Patient Data Dashboard
+The frontend includes a dashboard page (`front_end/dashboard.html`) that displays all processed patient records in a spreadsheet-like table:
+- **Data Source**: Fetches from `/reports` endpoint on Cloud Run backend
+- **Columns**: Patient Name, DOB, DOI, Test Types, all key scores (RightEye, CTSIB percentiles, Creyos neuropsych scores)
+- **Features**: 
+  - Sortable columns (click header to sort)
+  - Search/filter by patient name
+  - CSV export functionality
+  - Color-coded scores (red for abnormal, orange for borderline, green for normal)
+- **Navigation**: Links between Upload page and Dashboard
+
 ## PDF Chunking (Large Document Handling)
 The Document AI Custom Extractor has a 15-page limit per request. For documents exceeding this limit:
 1. The PDF is split into 15-page chunks using pypdf

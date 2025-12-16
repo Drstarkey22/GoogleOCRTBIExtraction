@@ -42,9 +42,25 @@
             border-radius: 4px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #0b66c3;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+    <div class="nav">
+        <a href="index.html">Upload Documents</a>
+        <a href="dashboard.html">Patient Dashboard</a>
+    </div>
+    
     <h1>Upload Medical Documents</h1>
     <div id="drop-zone">Drag & drop files here or click to select</div>
     <input type="file" id="file-input" multiple style="display: none" />
