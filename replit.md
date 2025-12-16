@@ -71,3 +71,13 @@ Domain impairment logic:
 - Fixed zero-value percentile display (now shows N/A or omits row)
 - Updated domain impairment logic to only count actual test results
 - Added conditional rendering for posturography findings
+- **Added PDF chunking for large documents**: Documents over 15 pages are automatically split into chunks, processed separately through Document AI, and results are merged. This fixes the PAGE_LIMIT_EXCEEDED error for large Creyos reports.
+
+## PDF Chunking (Large Document Handling)
+The Document AI Custom Extractor has a 15-page limit per request. For documents exceeding this limit:
+1. The PDF is split into 15-page chunks using pypdf
+2. Each chunk is processed separately through the extractor
+3. Results are merged - first non-empty value wins for each field
+4. No temporary files are created; processing is done in-memory
+
+This allows processing of Creyos reports (often 25+ pages) without errors.
