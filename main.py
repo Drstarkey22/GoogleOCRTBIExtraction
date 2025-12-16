@@ -589,6 +589,36 @@ def get_reports():
     response.headers["Access-Control-Allow-Origin"] = "*"
     return response
 
+@app.route("/clear-all-reports", methods=["OPTIONS"])
+def clear_reports_options():
+    response = app.make_response("")
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
+@app.route("/clear-all-reports", methods=["DELETE"])
+def clear_all_reports():
+    """
+    Delete all documents from the reports collection in Firestore.
+    WARNING: This is a destructive operation. Use with caution.
+    """
+    db = get_firestore_client()
+    reports_ref = db.collection("reports")
+    docs = reports_ref.stream()
+    
+    deleted_count = 0
+    for doc in docs:
+        doc.reference.delete()
+        deleted_count += 1
+    
+    response = jsonify({
+        "success": True,
+        "message": f"Deleted {deleted_count} reports from Firestore"
+    })
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
 @app.route("/upload", methods=["OPTIONS"])
 def upload_options():
     response = app.make_response("")
