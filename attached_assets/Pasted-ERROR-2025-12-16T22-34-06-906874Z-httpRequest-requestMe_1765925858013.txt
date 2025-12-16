@@ -1,0 +1,30 @@
+ERROR 2025-12-16T22:34:06.906874Z [httpRequest.requestMethod: POST] [httpRequest.status: 500] [httpRequest.responseSize: 506 B] [httpRequest.latency: 6.864 s] [httpRequest.userAgent: Chrome 143.0.0.0] https://tbi-backend-447216852170.us-central1.run.app/upload
+ERROR 2025-12-16T22:34:13.782932Z Traceback (most recent call last): File "/usr/local/lib/python3.11/site-packages/flask/app.py", line 1455, in wsgi_app response = self.full_dispatch_request() ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/flask/app.py", line 869, in full_dispatch_request rv = self.handle_user_exception(e) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/flask_cors/extension.py", line 176, in wrapped_function return cors_after_request(app.make_response(f(*args, **kwargs))) ^^^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/flask/app.py", line 867, in full_dispatch_request rv = self.dispatch_request() ^^^^^^^^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/flask/app.py", line 852, in dispatch_request return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/app/main.py", line 777, in upload_endpoint html_report = render_report( ^^^^^^^^^^^^^^ File "/app/main.py", line 342, in render_report return template.render( ^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/jinja2/environment.py", line 1295, in render self.environment.handle_exception() File "/usr/local/lib/python3.11/site-packages/jinja2/environment.py", line 942, in handle_exception raise rewrite_traceback_stack(source=source) File "<template>", line 155, in top-level template code TypeError: '<=' not supported between instances of 'str' and 'int'
+ERROR 2025-12-16T22:34:56.871493Z [httpRequest.requestMethod: POST] [httpRequest.status: 500] [httpRequest.responseSize: 506 B] [httpRequest.latency: 7.407 s] [httpRequest.userAgent: Chrome 143.0.0.0] https://tbi-backend-447216852170.us-central1.run.app/upload
+ERROR 2025-12-16T22:35:04.288018Z Traceback (most recent call last): File "/usr/local/lib/python3.11/site-packages/flask/app.py", line 1455, in wsgi_app response = self.full_dispatch_request() ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/flask/app.py", line 869, in full_dispatch_request rv = self.handle_user_exception(e) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/flask_cors/extension.py", line 176, in wrapped_function return cors_after_request(app.make_response(f(*args, **kwargs))) ^^^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/flask/app.py", line 867, in full_dispatch_request rv = self.dispatch_request() ^^^^^^^^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/flask/app.py", line 852, in dispatch_request return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/app/main.py", line 777, in upload_endpoint html_report = render_report( ^^^^^^^^^^^^^^ File "/app/main.py", line 342, in render_report return template.render( ^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/site-packages/jinja2/environment.py", line 1295, in render self.environment.handle_exception() File "/usr/local/lib/python3.11/site-packages/jinja2/environment.py", line 942, in handle_exception raise rewrite_traceback_stack(source=source) File "<template>", line 155, in top-level template code TypeError: '<=' not supported between instances of 'str' and 'int'
+  {
+    "textPayload": "Traceback (most recent call last):\n  File \"/usr/local/lib/python3.11/site-packages/flask/app.py\", line 1455, in wsgi_app\n    response = self.full_dispatch_request()\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/flask/app.py\", line 869, in full_dispatch_request\n    rv = self.handle_user_exception(e)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/flask_cors/extension.py\", line 176, in wrapped_function\n    return cors_after_request(app.make_response(f(*args, **kwargs)))\n                                                ^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/flask/app.py\", line 867, in full_dispatch_request\n    rv = self.dispatch_request()\n         ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/flask/app.py\", line 852, in dispatch_request\n    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/app/main.py\", line 777, in upload_endpoint\n    html_report = render_report(\n                  ^^^^^^^^^^^^^^\n  File \"/app/main.py\", line 342, in render_report\n    return template.render(\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/jinja2/environment.py\", line 1295, in render\n    self.environment.handle_exception()\n  File \"/usr/local/lib/python3.11/site-packages/jinja2/environment.py\", line 942, in handle_exception\n    raise rewrite_traceback_stack(source=source)\n  File \"<template>\", line 155, in top-level template code\nTypeError: '<=' not supported between instances of 'str' and 'int'",
+    "insertId": "6941de9800046512ebc1ffdc",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "tbi-backend",
+        "revision_name": "tbi-backend-00100-n92",
+        "service_name": "tbi-backend",
+        "project_id": "axon-tbi-automation",
+        "location": "us-central1"
+      }
+    },
+    "timestamp": "2025-12-16T22:35:04.288018Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0007e26d68601fdb349fe946002b24146d435548d5657b1b2a27718927161a7a77f6a54ea97658811308c32bcece00b3b41cd6a0b36a0e1701a1b548bf8ba9f4159cfbea0326012e6f93550f4e8b"
+    },
+    "logName": "projects/axon-tbi-automation/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-16T22:35:04.292245621Z",
+    "errorGroups": [
+      {
+        "id": "CJnD7aLu6PPg5AE"
+      }
+    ]
+  }
