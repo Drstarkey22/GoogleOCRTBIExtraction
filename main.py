@@ -14,6 +14,8 @@ You can deploy this application to Cloud Run by building the container image an
 """
 
 import os
+import io
+import uuid
 from typing import List, Dict
 
 from flask import Flask, request, jsonify
@@ -25,9 +27,13 @@ from google.cloud import documentai_v1 as documentai  # type: ignore
 from google.cloud import documentai_v1beta3 as documentai_beta  # type: ignore
 from jinja2 import Template  # type: ignore
 import pdfkit  # type: ignore
+from pypdf import PdfReader, PdfWriter  # type: ignore
 from datetime import datetime
 from google.protobuf.json_format import MessageToDict  # type: ignore
 import json
+
+# Maximum pages per chunk for Document AI Custom Extractor
+MAX_PAGES_PER_CHUNK = 15
 
 app = Flask(__name__)
 CORS(app)
@@ -54,6 +60,51 @@ def get_storage_client() -> storage.Client:
 def get_firestore_client() -> firestore.Client:
     """Instantiate and return a Firestore client."""
     return firestore.Client(project=PROJECT_ID)
+
+
+def split_pdf_into_chunks(pdf_bytes: bytes, max_pages: int = MAX_PAGES_PER_CHUNK) -> List[bytes]:
+    """Split a PDF into chunks of max_pages each.
+
+    Args:
+        pdf_bytes: Raw bytes of the PDF document.
+        max_pages: Maximum number of pages per chunk (default: 15).
+
+    Returns:
+        A list of PDF byte arrays, each containing up to max_pages pages.
+    """
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    total_pages = len(reader.pages)
+
+    if total_pages <= max_pages:
+        return [pdf_bytes]
+
+    chunks = []
+    for start in range(0, total_pages, max_pages):
+        writer = PdfWriter()
+        end = min(start + max_pages, total_pages)
+        for page_num in range(start, end):
+            writer.add_page(reader.pages[page_num])
+
+        chunk_buffer = io.BytesIO()
+        writer.write(chunk_buffer)
+        chunk_buffer.seek(0)
+        chunks.append(chunk_buffer.read())
+
+    return chunks
+
+
+def delete_blob(gcs_uri: str) -> None:
+    """Delete a blob from Cloud Storage given its GCS URI."""
+    if not gcs_uri.startswith("gs://"):
+        return
+    _, _, rest = gcs_uri.partition("gs://")
+    bucket_name, _, blob_name = rest.partition("/")
+    if bucket_name and blob_name:
+        try:
+            client = get_storage_client()
+            client.bucket(bucket_name).blob(blob_name).delete()
+        except Exception:
+            pass
 
 
 def process_document(content: bytes, mime_type: str = "application/pdf") -> documentai.Document:
@@ -370,29 +421,15 @@ def html_to_pdf(html_content: str) -> bytes:
     # pdfkit.from_string returns bytes when output_path=False
     return pdfkit.from_string(html_content, False)
 
-def extract_fields_generative(gcs_uri: str) -> Dict:
-    """Extract structured fields using Document AI Custom Extractor.
+def _process_single_chunk(data: bytes) -> Dict:
+    """Process a single PDF chunk through the Document AI Custom Extractor.
 
-    Replaces the (unsupported) GenerativeExtractRequest/generative_extract path.
-    Downloads the PDF bytes from GCS and sends raw bytes to the Custom Extractor.
+    Args:
+        data: Raw PDF bytes (must be <= MAX_PAGES_PER_CHUNK pages).
+
+    Returns:
+        Dictionary of extracted field values.
     """
-    if not GEN_EXTRACTOR_ID:
-        return {}
-
-    if not gcs_uri.startswith("gs://"):
-        raise ValueError(f"Expected gs:// URI, got: {gcs_uri}")
-
-    # Parse gs://bucket/object
-    _, _, rest = gcs_uri.partition("gs://")
-    bucket_name, _, blob_name = rest.partition("/")
-    if not bucket_name or not blob_name:
-        raise ValueError(f"Invalid GCS URI: {gcs_uri}")
-
-    # Download bytes from GCS
-    storage_client = get_storage_client()
-    data = storage_client.bucket(bucket_name).blob(blob_name).download_as_bytes()
-
-    # Call Custom Extractor with raw bytes
     client = documentai_beta.DocumentProcessorServiceClient(
         client_options={"api_endpoint": f"{GEN_EXTRACTOR_LOCATION}-documentai.googleapis.com"}
     )
@@ -402,7 +439,6 @@ def extract_fields_generative(gcs_uri: str) -> Dict:
     req = documentai_beta.ProcessRequest(name=name, raw_document=raw)
     result = client.process_document(request=req)
 
-    # Convert entities to dict
     out: Dict = {}
     for e in (getattr(result.document, "entities", None) or []):
         key = (getattr(e, "type_", "") or "").strip()
@@ -420,6 +456,60 @@ def extract_fields_generative(gcs_uri: str) -> Dict:
             out[key] = val
 
     return out
+
+
+def extract_fields_generative(gcs_uri: str) -> Dict:
+    """Extract structured fields using Document AI Custom Extractor.
+
+    For documents exceeding MAX_PAGES_PER_CHUNK pages, the PDF is split into
+    smaller chunks, each processed separately, and results are merged.
+
+    Args:
+        gcs_uri: GCS URI of the PDF document to process.
+
+    Returns:
+        Dictionary of extracted field values merged from all chunks.
+    """
+    if not GEN_EXTRACTOR_ID:
+        return {}
+
+    if not gcs_uri.startswith("gs://"):
+        raise ValueError(f"Expected gs:// URI, got: {gcs_uri}")
+
+    # Parse gs://bucket/object
+    _, _, rest = gcs_uri.partition("gs://")
+    bucket_name, _, blob_name = rest.partition("/")
+    if not bucket_name or not blob_name:
+        raise ValueError(f"Invalid GCS URI: {gcs_uri}")
+
+    # Download bytes from GCS
+    storage_client = get_storage_client()
+    data = storage_client.bucket(bucket_name).blob(blob_name).download_as_bytes()
+
+    # Split into chunks if needed
+    chunks = split_pdf_into_chunks(data, MAX_PAGES_PER_CHUNK)
+
+    if len(chunks) == 1:
+        # Single chunk - process directly
+        return _process_single_chunk(data)
+
+    # Multiple chunks - process each and merge results
+    merged: Dict = {}
+    temp_uris: List[str] = []
+
+    try:
+        for i, chunk_bytes in enumerate(chunks):
+            chunk_result = _process_single_chunk(chunk_bytes)
+            # Merge results - first non-empty value wins for each key
+            for k, v in chunk_result.items():
+                if k not in merged and v:
+                    merged[k] = v
+    finally:
+        # Clean up any temporary chunk files
+        for uri in temp_uris:
+            delete_blob(uri)
+
+    return merged
 
 
 
