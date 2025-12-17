@@ -323,10 +323,67 @@ def render_report(fields: Dict, patient_name: str, dob: str, doi: str, dos: str,
         else:
             # If we can't find "64" suffix, just take first 2 digits
             rpq_score = int(rpq_str[:2]) if len(rpq_str) >= 2 else rpq_score
-    pcl_5_score = _parse_int(fields.get("pcl_5_score") or fields.get("pcl-5 score"))
-    psqi_score = _parse_int(fields.get("psqi_score") or fields.get("psqi score"))
-    phq_9_score = _parse_int(fields.get("phq_9_score") or fields.get("phq-9 score"))
-    gad_7_score = _parse_int(fields.get("gad_7_score") or fields.get("gad-7 score"))
+    # PCL-5: max score is 80, format is "X/80"
+    raw_pcl = fields.get("pcl_5_score") or fields.get("pcl-5 score") or ""
+    pcl_5_score = _parse_score_with_total(raw_pcl)
+    if pcl_5_score > 80:
+        pcl_str = str(pcl_5_score)
+        # Try to find "80" as the denominator
+        for split_pos in range(1, len(pcl_str)):
+            numerator = int(pcl_str[:split_pos])
+            denominator = pcl_str[split_pos:]
+            if denominator == "80" and numerator <= 80:
+                pcl_5_score = numerator
+                break
+        else:
+            # If can't find "80", take first 2 digits if reasonable
+            if len(pcl_str) >= 2:
+                pcl_5_score = int(pcl_str[:2])
+    
+    # PSQI: max score is 21, format is "X/21"
+    raw_psqi = fields.get("psqi_score") or fields.get("psqi score") or ""
+    psqi_score = _parse_score_with_total(raw_psqi)
+    if psqi_score > 21:
+        psqi_str = str(psqi_score)
+        for split_pos in range(1, len(psqi_str)):
+            numerator = int(psqi_str[:split_pos])
+            denominator = psqi_str[split_pos:]
+            if denominator == "21" and numerator <= 21:
+                psqi_score = numerator
+                break
+        else:
+            if len(psqi_str) >= 2:
+                psqi_score = int(psqi_str[:2]) if int(psqi_str[:2]) <= 21 else int(psqi_str[:1])
+    
+    # PHQ-9: max score is 27, format is "X/27"
+    raw_phq = fields.get("phq_9_score") or fields.get("phq-9 score") or ""
+    phq_9_score = _parse_score_with_total(raw_phq)
+    if phq_9_score > 27:
+        phq_str = str(phq_9_score)
+        for split_pos in range(1, len(phq_str)):
+            numerator = int(phq_str[:split_pos])
+            denominator = phq_str[split_pos:]
+            if denominator == "27" and numerator <= 27:
+                phq_9_score = numerator
+                break
+        else:
+            if len(phq_str) >= 2:
+                phq_9_score = int(phq_str[:2]) if int(phq_str[:2]) <= 27 else int(phq_str[:1])
+    
+    # GAD-7: max score is 21, format is "X/21"
+    raw_gad = fields.get("gad_7_score") or fields.get("gad-7 score") or ""
+    gad_7_score = _parse_score_with_total(raw_gad)
+    if gad_7_score > 21:
+        gad_str = str(gad_7_score)
+        for split_pos in range(1, len(gad_str)):
+            numerator = int(gad_str[:split_pos])
+            denominator = gad_str[split_pos:]
+            if denominator == "21" and numerator <= 21:
+                gad_7_score = numerator
+                break
+        else:
+            if len(gad_str) >= 2:
+                gad_7_score = int(gad_str[:2]) if int(gad_str[:2]) <= 21 else int(gad_str[:1])
     
     # Cognitive test percentiles
     visuospatial_wm = _parse_percentile(fields.get("visuospatial_working_memory_percentile") or fields.get("Visuospatial working memory test"))
