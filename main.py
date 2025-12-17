@@ -248,18 +248,36 @@ def render_report(fields: Dict, patient_name: str, dob: str, doi: str, dos: str,
     import re
     
     def _parse_percentile(val) -> int:
-        """Parse a percentile value, stripping %, ordinal suffixes, and extracting just the number."""
+        """Parse a percentile value, stripping %, ordinal suffixes, and extracting just the number.
+        Caps at 100 since percentiles can't exceed that."""
         if val is None:
             return 0
         s = str(val).replace("%", "").replace("nd", "").replace("rd", "").replace("th", "").replace("st", "").strip()
         match = re.search(r'\d+', s)
-        return int(match.group()) if match else 0
+        if match:
+            pct = int(match.group())
+            # Cap at 100 - if over 100, likely an OCR error (e.g., "102" should be "10" or "2")
+            return min(pct, 100)
+        return 0
     
     def _parse_int(val, default=0) -> int:
         """Parse an integer value safely."""
         if val is None:
             return default
         s = str(val).strip()
+        match = re.search(r'\d+', s)
+        return int(match.group()) if match else default
+    
+    def _parse_score_with_total(val, default=0) -> int:
+        """Parse a score that may be in 'X/Y' format (e.g., '27/64'). Returns just X."""
+        if val is None:
+            return default
+        s = str(val).strip()
+        # Check for X/Y format
+        slash_match = re.match(r'(\d+)\s*/\s*\d+', s)
+        if slash_match:
+            return int(slash_match.group(1))
+        # Otherwise just get first number
         match = re.search(r'\d+', s)
         return int(match.group()) if match else default
     
@@ -289,7 +307,22 @@ def render_report(fields: Dict, patient_name: str, dob: str, doi: str, dos: str,
     vestibular_score = _parse_percentile(fields.get("vestibular_score_percentile"))
     
     # Neuropsychiatric scores
-    rpq_score = _parse_int(fields.get("rpq_score") or fields.get("rpq score"))
+    # RPQ score is typically "X/64" format. If we get something like "2764", extract just the first part
+    raw_rpq = fields.get("rpq_score") or fields.get("rpq score") or ""
+    rpq_score = _parse_score_with_total(raw_rpq)
+    # RPQ max is 64 - if higher, it's likely "27/64" read as "2764", so extract first 2 digits
+    if rpq_score > 64:
+        rpq_str = str(rpq_score)
+        # Try to split at reasonable boundaries (64 is the denominator)
+        for split_pos in range(1, len(rpq_str)):
+            numerator = int(rpq_str[:split_pos])
+            denominator = rpq_str[split_pos:]
+            if denominator == "64" and numerator <= 64:
+                rpq_score = numerator
+                break
+        else:
+            # If we can't find "64" suffix, just take first 2 digits
+            rpq_score = int(rpq_str[:2]) if len(rpq_str) >= 2 else rpq_score
     pcl_5_score = _parse_int(fields.get("pcl_5_score") or fields.get("pcl-5 score"))
     psqi_score = _parse_int(fields.get("psqi_score") or fields.get("psqi score"))
     phq_9_score = _parse_int(fields.get("phq_9_score") or fields.get("phq-9 score"))
