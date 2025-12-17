@@ -466,7 +466,7 @@ def _process_single_chunk(data: bytes) -> Dict:
         data: Raw PDF bytes (must be <= MAX_PAGES_PER_CHUNK pages).
 
     Returns:
-        Dictionary of extracted field values.
+        Dictionary of extracted field values (flattened from nested structure).
     """
     client = documentai_beta.DocumentProcessorServiceClient(
         client_options={"api_endpoint": f"{GEN_EXTRACTOR_LOCATION}-documentai.googleapis.com"}
@@ -478,20 +478,34 @@ def _process_single_chunk(data: bytes) -> Dict:
     result = client.process_document(request=req)
 
     out: Dict = {}
-    for e in (getattr(result.document, "entities", None) or []):
-        key = (getattr(e, "type_", "") or "").strip()
-        if not key:
-            continue
-
+    
+    def extract_entity_value(entity):
+        """Extract the value from an entity."""
         val = ""
-        nv = getattr(e, "normalized_value", None)
+        nv = getattr(entity, "normalized_value", None)
         if nv and getattr(nv, "text", ""):
             val = (nv.text or "").strip()
         if not val:
-            val = (getattr(e, "mention_text", "") or "").strip()
-
+            val = (getattr(entity, "mention_text", "") or "").strip()
+        return val
+    
+    def process_entity(entity, out_dict):
+        """Recursively process an entity and its nested properties."""
+        key = (getattr(entity, "type_", "") or "").strip()
+        if not key:
+            return
+        
+        val = extract_entity_value(entity)
         if val:
-            out[key] = val
+            out_dict[key] = val
+        
+        # Process nested child entities (properties)
+        properties = getattr(entity, "properties", None) or []
+        for prop in properties:
+            process_entity(prop, out_dict)
+    
+    for e in (getattr(result.document, "entities", None) or []):
+        process_entity(e, out)
 
     return out
 

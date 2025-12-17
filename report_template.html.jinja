@@ -91,42 +91,18 @@
 
   <table>
     <tr><th>Domain</th><th>Tasks</th><th>Percentile</th><th>Task Interpretation</th></tr>
-    {% if visuospatial_wm_percentile %}
-    <tr><td>Memory</td><td>Visuospatial Working Memory (Number Ladder)</td><td>{{ visuospatial_wm_percentile }}{{ 'st' if visuospatial_wm_percentile == 1 else ('nd' if visuospatial_wm_percentile == 2 else ('rd' if visuospatial_wm_percentile == 3 else 'th')) }}</td><td>{{ visuospatial_wm_interpretation }}</td></tr>
-    {% endif %}
-    {% if working_memory_percentile %}
-    <tr><td>Memory</td><td>Working Memory (Token Search)</td><td>{{ working_memory_percentile }}{{ 'st' if working_memory_percentile == 1 else ('nd' if working_memory_percentile == 2 else ('rd' if working_memory_percentile == 3 else 'th')) }}</td><td>{{ working_memory_interpretation }}</td></tr>
-    {% endif %}
-    {% if spatial_stm_percentile %}
-    <tr><td>Memory</td><td>Spatial Short-Term Memory (Spatial Span)</td><td>{{ spatial_stm_percentile }}{{ 'st' if spatial_stm_percentile == 1 else ('nd' if spatial_stm_percentile == 2 else ('rd' if spatial_stm_percentile == 3 else 'th')) }}</td><td>{{ spatial_stm_interpretation }}</td></tr>
-    {% endif %}
-    {% if verbal_stm_percentile %}
-    <tr><td>Memory</td><td>Verbal Short-Term Memory (Digit Span)</td><td>{{ verbal_stm_percentile }}{{ 'st' if verbal_stm_percentile == 1 else ('nd' if verbal_stm_percentile == 2 else ('rd' if verbal_stm_percentile == 3 else 'th')) }}</td><td>{{ verbal_stm_interpretation }}</td></tr>
-    {% endif %}
-    {% if episodic_memory_percentile %}
-    <tr><td>Memory</td><td>Episodic Memory (Paired Associates)</td><td>{{ episodic_memory_percentile }}{{ 'st' if episodic_memory_percentile == 1 else ('nd' if episodic_memory_percentile == 2 else ('rd' if episodic_memory_percentile == 3 else 'th')) }}</td><td>{{ episodic_memory_interpretation }}</td></tr>
-    {% endif %}
-    {% if polygons_percentile %}
-    <tr><td>Visuospatial / Visual Processing</td><td>Visuospatial Processing (Polygons)</td><td>{{ polygons_percentile }}{{ 'st' if polygons_percentile == 1 else ('nd' if polygons_percentile == 2 else ('rd' if polygons_percentile == 3 else 'th')) }}</td><td>{{ polygons_interpretation }}</td></tr>
-    {% endif %}
-    {% if mental_rotation_percentile %}
-    <tr><td>Visuospatial / Visual Processing</td><td>Mental Rotation (Rotations)</td><td>{{ mental_rotation_percentile }}{{ 'st' if mental_rotation_percentile == 1 else ('nd' if mental_rotation_percentile == 2 else ('rd' if mental_rotation_percentile == 3 else 'th')) }}</td><td>{{ mental_rotation_interpretation }}</td></tr>
-    {% endif %}
-    {% if deductive_reasoning_percentile %}
-    <tr><td>Reasoning</td><td>Deductive Reasoning</td><td>{{ deductive_reasoning_percentile }}{{ 'st' if deductive_reasoning_percentile == 1 else ('nd' if deductive_reasoning_percentile == 2 else ('rd' if deductive_reasoning_percentile == 3 else 'th')) }}</td><td>{{ deductive_reasoning_interpretation }}</td></tr>
-    {% endif %}
-    {% if verbal_reasoning_percentile %}
-    <tr><td>Reasoning</td><td>Verbal Reasoning (Grammatical Reasoning)</td><td>{{ verbal_reasoning_percentile }}{{ 'st' if verbal_reasoning_percentile == 1 else ('nd' if verbal_reasoning_percentile == 2 else ('rd' if verbal_reasoning_percentile == 3 else 'th')) }}</td><td>{{ verbal_reasoning_interpretation }}</td></tr>
-    {% endif %}
-    {% if attention_percentile %}
-    <tr><td>Attention</td><td>Attention (Feature Match)</td><td>{{ attention_percentile }}{{ 'st' if attention_percentile == 1 else ('nd' if attention_percentile == 2 else ('rd' if attention_percentile == 3 else 'th')) }}</td><td>{{ attention_interpretation }}</td></tr>
-    {% endif %}
-    {% if planning_percentile %}
-    <tr><td>Executive Function</td><td>Planning (Spatial Planning)</td><td>{{ planning_percentile }}{{ 'st' if planning_percentile == 1 else ('nd' if planning_percentile == 2 else ('rd' if planning_percentile == 3 else 'th')) }}</td><td>{{ planning_interpretation }}</td></tr>
-    {% endif %}
-    {% if response_inhibition_percentile %}
-    <tr><td>Executive Function</td><td>Response Inhibition (Double Trouble)</td><td>{{ response_inhibition_percentile }}{{ 'st' if response_inhibition_percentile == 1 else ('nd' if response_inhibition_percentile == 2 else ('rd' if response_inhibition_percentile == 3 else 'th')) }}</td><td>{{ response_inhibition_interpretation }}</td></tr>
-    {% endif %}
+    <tr><td>Memory</td><td>Visuospatial Working Memory (Number Ladder)</td><td>{% if visuospatial_wm_percentile and visuospatial_wm_percentile > 0 %}{{ visuospatial_wm_percentile }}{{ 'st' if visuospatial_wm_percentile == 1 else ('nd' if visuospatial_wm_percentile == 2 else ('rd' if visuospatial_wm_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ visuospatial_wm_interpretation if visuospatial_wm_percentile and visuospatial_wm_percentile > 0 else '' }}</td></tr>
+    <tr><td>Memory</td><td>Working Memory (Token Search)</td><td>{% if working_memory_percentile and working_memory_percentile > 0 %}{{ working_memory_percentile }}{{ 'st' if working_memory_percentile == 1 else ('nd' if working_memory_percentile == 2 else ('rd' if working_memory_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ working_memory_interpretation if working_memory_percentile and working_memory_percentile > 0 else '' }}</td></tr>
+    <tr><td>Memory</td><td>Spatial Short-Term Memory (Spatial Span)</td><td>{% if spatial_stm_percentile and spatial_stm_percentile > 0 %}{{ spatial_stm_percentile }}{{ 'st' if spatial_stm_percentile == 1 else ('nd' if spatial_stm_percentile == 2 else ('rd' if spatial_stm_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ spatial_stm_interpretation if spatial_stm_percentile and spatial_stm_percentile > 0 else '' }}</td></tr>
+    <tr><td>Memory</td><td>Verbal Short-Term Memory (Digit Span)</td><td>{% if verbal_stm_percentile and verbal_stm_percentile > 0 %}{{ verbal_stm_percentile }}{{ 'st' if verbal_stm_percentile == 1 else ('nd' if verbal_stm_percentile == 2 else ('rd' if verbal_stm_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ verbal_stm_interpretation if verbal_stm_percentile and verbal_stm_percentile > 0 else '' }}</td></tr>
+    <tr><td>Memory</td><td>Episodic Memory (Paired Associates)</td><td>{% if episodic_memory_percentile and episodic_memory_percentile > 0 %}{{ episodic_memory_percentile }}{{ 'st' if episodic_memory_percentile == 1 else ('nd' if episodic_memory_percentile == 2 else ('rd' if episodic_memory_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ episodic_memory_interpretation if episodic_memory_percentile and episodic_memory_percentile > 0 else '' }}</td></tr>
+    <tr><td>Visuospatial / Visual Processing</td><td>Visuospatial Processing (Polygons)</td><td>{% if polygons_percentile and polygons_percentile > 0 %}{{ polygons_percentile }}{{ 'st' if polygons_percentile == 1 else ('nd' if polygons_percentile == 2 else ('rd' if polygons_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ polygons_interpretation if polygons_percentile and polygons_percentile > 0 else '' }}</td></tr>
+    <tr><td>Visuospatial / Visual Processing</td><td>Mental Rotation (Rotations)</td><td>{% if mental_rotation_percentile and mental_rotation_percentile > 0 %}{{ mental_rotation_percentile }}{{ 'st' if mental_rotation_percentile == 1 else ('nd' if mental_rotation_percentile == 2 else ('rd' if mental_rotation_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ mental_rotation_interpretation if mental_rotation_percentile and mental_rotation_percentile > 0 else '' }}</td></tr>
+    <tr><td>Reasoning</td><td>Deductive Reasoning</td><td>{% if deductive_reasoning_percentile and deductive_reasoning_percentile > 0 %}{{ deductive_reasoning_percentile }}{{ 'st' if deductive_reasoning_percentile == 1 else ('nd' if deductive_reasoning_percentile == 2 else ('rd' if deductive_reasoning_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ deductive_reasoning_interpretation if deductive_reasoning_percentile and deductive_reasoning_percentile > 0 else '' }}</td></tr>
+    <tr><td>Reasoning</td><td>Verbal Reasoning (Grammatical Reasoning)</td><td>{% if verbal_reasoning_percentile and verbal_reasoning_percentile > 0 %}{{ verbal_reasoning_percentile }}{{ 'st' if verbal_reasoning_percentile == 1 else ('nd' if verbal_reasoning_percentile == 2 else ('rd' if verbal_reasoning_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ verbal_reasoning_interpretation if verbal_reasoning_percentile and verbal_reasoning_percentile > 0 else '' }}</td></tr>
+    <tr><td>Attention</td><td>Attention (Feature Match)</td><td>{% if attention_percentile and attention_percentile > 0 %}{{ attention_percentile }}{{ 'st' if attention_percentile == 1 else ('nd' if attention_percentile == 2 else ('rd' if attention_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ attention_interpretation if attention_percentile and attention_percentile > 0 else '' }}</td></tr>
+    <tr><td>Executive Function</td><td>Planning (Spatial Planning)</td><td>{% if planning_percentile and planning_percentile > 0 %}{{ planning_percentile }}{{ 'st' if planning_percentile == 1 else ('nd' if planning_percentile == 2 else ('rd' if planning_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ planning_interpretation if planning_percentile and planning_percentile > 0 else '' }}</td></tr>
+    <tr><td>Executive Function</td><td>Response Inhibition (Double Trouble)</td><td>{% if response_inhibition_percentile and response_inhibition_percentile > 0 %}{{ response_inhibition_percentile }}{{ 'st' if response_inhibition_percentile == 1 else ('nd' if response_inhibition_percentile == 2 else ('rd' if response_inhibition_percentile == 3 else 'th')) }}{% endif %}</td><td>{{ response_inhibition_interpretation if response_inhibition_percentile and response_inhibition_percentile > 0 else '' }}</td></tr>
   </table>
   {% endif %}
   {% endif %}
