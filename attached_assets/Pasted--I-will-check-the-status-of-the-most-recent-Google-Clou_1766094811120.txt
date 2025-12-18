@@ -1,0 +1,40 @@
+✦ I will check the status of the most recent Google Cloud builds to see if the latest changes from GitHub have been deployed.
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell gcloud builds list --limit=5 [current working directory /home/drallen] (Listing the 5 most recent Google Cloud builds to check deployment status.)                             │
+│                                                                                                                                                                                         │
+│ ID: 2958287f-1801-4584-ae7f-d60057410372                                                                                                                                                │
+│ CREATE_TIME: 2025-12-18T21:50:16+00:00                                                                                                                                                  │
+│ DURATION: 2M47S                                                                                                                                                                         │
+│ SOURCE: https://github.com/Drstarkey22/GoogleOCRTBIExtraction.git@1ccf39f883133c29e9a5a1db1be51a3ef783e2c9                                                                              │
+│ IMAGES: -                                                                                                                                                                               │
+│ STATUS: WORKING                                                                                                                                                                         │
+│                                                                                                                                                                                         │
+│ ID: 7544c900-2dc2-4645-889d-2ccf447136b4                                                                                                                                                │
+│ CREATE_TIME: 2025-12-18T21:40:42+00:00                                                                                                                                                  │
+│ DURATION: 3M10S                                                                                                                                                                         │
+│ SOURCE: https://github.com/Drstarkey22/GoogleOCRTBIExtraction.git@faffd32a2050b75b43368357522e505ba263c827                                                                              │
+│ IMAGES: us-central1-docker.pkg.dev/axon-tbi-automation/cloud-run-source-deploy/googleocrtbiextraction/googleocrtbiextraction:faffd32a2050b75b43368357522e505ba263c827                   │
+│ STATUS: SUCCESS                                                                                                                                                                         │
+│                                                                                                                                                                                         │
+│ ID: 4417cd92-dba7-4ce0-8072-d95b247e5bf0                                                                                                                                                │
+│ CREATE_TIME: 2025-12-17T22:30:45+00:00                                                                                                                                                  │
+│ DURATION: 2M58S                                                                                                                                                                         │
+│ SOURCE: https://github.com/Drstarkey22/GoogleOCRTBIExtraction.git@b4a4cd39a5b8e9d850bc4acf778cd37f1bd1e286                                                                              │
+│ IMAGES: us-central1-docker.pkg.dev/axon-tbi-automation/cloud-run-source-deploy/googleocrtbiextraction/googleocrtbiextraction:b4a4cd39a5b8e9d850bc4acf778cd37f1bd1e286                   │
+│ STATUS: SUCCESS                                                                                                                                                                         │
+│                                                                                                                                                                                         │
+│ ID: b2694789-9023-4057-905f-0540461eec34                                                                                                                                                │
+│ CREATE_TIME: 2025-12-17T22:24:07+00:00                                                                                                                                                  │
+│ DURATION: 2M55S                                                                                                                                                                         │
+│ SOURCE: https://github.com/Drstarkey22/GoogleOCRTBIExtraction.git@6b96894ae8978eae2faf4c78780ff63ab42fb705                                                                              │
+│ IMAGES: us-central1-docker.pkg.dev/axon-tbi-automation/cloud-run-source-deploy/googleocrtbiextraction/googleocrtbiextraction:6b96894ae8978eae2faf4c78780ff63ab42fb705                   │
+│ STATUS: SUCCESS                                                                                                                                                                         │
+│                                                                                                                                                                                         │
+│ ID: 0add1286-0401-4b22-a004-c8389410893a                                                                                                                                                │
+│ CREATE_TIME: 2025-12-17T22:02:57+00:00                                                                                                                                                  │
+│ DURATION: 4M16S                                                                                                                                                                         │
+│ SOURCE: https://github.com/Drstarkey22/GoogleOCRTBIExtraction.git@65ae7276861b244172de77296217fee98c629359                                                                              │
+│ IMAGES: us-central1-docker.pkg.dev/axon-tbi-automation/cloud-run-source-deploy/googleocrtbiextraction/googleocrtbiextraction:65ae7276861b244172de77296217fee98c629359                   │
+│ STATUS: SUCCESS                                                                                                                                                                         │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ Based on the build history, a new build was triggered just a few minutes ago and is currently in progress. It should be complete in another minute or two.
